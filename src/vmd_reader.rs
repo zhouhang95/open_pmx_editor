@@ -24,7 +24,7 @@ pub fn read_string<T>(file: &mut T, len: usize) -> String
         where T: Read {
     let mut string_raw = vec![0u8; len];
     file.read(&mut string_raw).unwrap();
-    WINDOWS_31J.decode(&string_raw, DecoderTrap::Ignore).unwrap()
+    WINDOWS_31J.decode(&string_raw, DecoderTrap::Ignore).unwrap().replace("\0", "")
 }
 
 pub fn read_bezier_control_point_pair4(file: &mut File) -> [f32; 4] {
