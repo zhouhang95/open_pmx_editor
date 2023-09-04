@@ -2,13 +2,14 @@ use std::ffi::OsStr;
 
 use egui::{TextStyle, ScrollArea};
 
-use crate::motion::Motion;
+use crate::{motion::Motion, pmm::read_pmm};
 
 pub struct TemplateApp {
     vmd_path: Option<std::path::PathBuf>,
     vmd_motion: Option<Motion>,
 
     bone_cur_value: usize,
+    log_text: String,
 }
 
 impl Default for TemplateApp {
@@ -17,6 +18,7 @@ impl Default for TemplateApp {
             vmd_path: None,
             vmd_motion: None,
             bone_cur_value: 0,
+            log_text: String::new(),
         }
     }
 }
@@ -90,8 +92,29 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
+                    if ui.button("Extract PMM into VMDs").clicked() {
+                        if let Some(p) = rfd::FileDialog::new().pick_file() {
+                            let pmm_path = p.display().to_string();
+                            let motions = read_pmm(&p);
+                            let mut buf = String::new();
+                            for (i, m) in motions.iter().enumerate() {
+                                let new_m = m.clear_empty_keyframe();
+                                new_m.write_vmd(&format!("{}.{:0>2}.vmd", pmm_path, i));
+                                buf += &format!("Index: {}\n", i);
+                                buf += &new_m.summary();
+                            }
+                            self.log_text += &buf;
+                        }
+                        ui.close_menu();
+                    }
                     if ui.button("Quit").clicked() {
                         _frame.close();
+                    }
+                });
+
+                ui.menu_button("Help", |ui| {
+                    if ui.button("Log").clicked() {
+                        ui.close_menu();
                     }
                 });
             });
