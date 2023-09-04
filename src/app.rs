@@ -1,9 +1,16 @@
+use std::ffi::OsStr;
+
+use crate::motion::Motion;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
     // Example stuff:
     label: String,
+    vmd_path: Option<std::path::PathBuf>,
+    #[serde(skip)]
+    vmd_motion: Option<Motion>,
 
     // this how you opt-out of serialization of a member
     #[serde(skip)]
@@ -16,6 +23,8 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            vmd_path: None,
+            vmd_motion: None,
         }
     }
 }
@@ -45,7 +54,6 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -57,6 +65,16 @@ impl eframe::App for TemplateApp {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
+                    if ui.button("Open").clicked() {
+                        self.vmd_path = rfd::FileDialog::new().pick_file();
+                        if let Some(p) = &self.vmd_path {
+                            let ext = p.extension();
+                            if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
+                                self.vmd_motion = Some(Motion::read_vmd(p));
+                            }
+                        }
+                        ui.close_menu();
+                    }
                     if ui.button("Quit").clicked() {
                         _frame.close();
                     }
@@ -65,16 +83,19 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
+            if let Some(m) = &self.vmd_motion {
+                ui.heading(&m.model_name);
+            }
             ui.heading("Side Panel");
 
             ui.horizontal(|ui| {
                 ui.label("Write something: ");
-                ui.text_edit_singleline(label);
+                ui.text_edit_singleline(&mut self.label);
             });
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
+            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
             if ui.button("Increment").clicked() {
-                *value += 1.0;
+                self.value += 1.0;
             }
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
