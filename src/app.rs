@@ -84,6 +84,12 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
+                    if ui.button("Clean Empty Keyframes").clicked() {
+                        if let Some(m) = &mut self.vmd_motion {
+                            *m = m.clear_empty_keyframe();
+                        }
+                        ui.close_menu();
+                    }
                     if ui.button("Quit").clicked() {
                         _frame.close();
                     }
