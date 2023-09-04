@@ -2,7 +2,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 
 pub struct Motion {
     pub model_name:       String,
@@ -121,8 +121,8 @@ impl Motion {
         }
     }
 
-    pub fn get_bone_keyframes(&self) -> HashMap<String, Vec<BoneKeyframe>> {
-        let mut keyframes_map: HashMap<String, Vec<BoneKeyframe>> = HashMap::new();
+    pub fn get_bone_keyframes(&self) -> BTreeMap<String, Vec<BoneKeyframe>> {
+        let mut keyframes_map: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
         for kf in &self.bone_keyframes {
             keyframes_map.entry(kf.name.clone()).or_insert(vec![]);
             keyframes_map.get_mut(&kf.name).unwrap().push(kf.clone());
@@ -130,8 +130,8 @@ impl Motion {
         keyframes_map
     }
 
-    pub fn get_morph_keyframes(&self) -> HashMap<String, Vec<MorphKeyframe>> {
-        let mut keyframes_map: HashMap<String, Vec<MorphKeyframe>> = HashMap::new();
+    pub fn get_morph_keyframes(&self) -> BTreeMap<String, Vec<MorphKeyframe>> {
+        let mut keyframes_map: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();
         for kf in &self.morph_keyframes {
             keyframes_map.entry(kf.name.clone()).or_insert(vec![]);
             keyframes_map.get_mut(&kf.name).unwrap().push(kf.clone());

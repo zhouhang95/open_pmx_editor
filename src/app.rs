@@ -1,5 +1,7 @@
 use std::ffi::OsStr;
 
+use egui::{TextStyle, ScrollArea};
+
 use crate::motion::Motion;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -15,6 +17,8 @@ pub struct TemplateApp {
     // this how you opt-out of serialization of a member
     #[serde(skip)]
     value: f32,
+    #[serde(skip)]
+    bone_cur_value: usize,
 }
 
 impl Default for TemplateApp {
@@ -25,6 +29,7 @@ impl Default for TemplateApp {
             value: 2.7,
             vmd_path: None,
             vmd_motion: None,
+            bone_cur_value: 0,
         }
     }
 }
@@ -83,34 +88,34 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
+            let mut bone_names = Vec::new();
+            let mut bone_keyframe_counts = Vec::new();
             if let Some(m) = &self.vmd_motion {
                 ui.heading(&m.model_name);
+                for (bn, kfs) in m.get_bone_keyframes() {
+                    bone_names.push(bn);
+                    bone_keyframe_counts.push(kfs.len());
+                }
             }
-            ui.heading("Side Panel");
-
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
+                let text = format!("Count: {}", bone_names.len());
+                ui.heading(text);
             });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
+            ui.separator();
+            let text_style = TextStyle::Body;
+            let row_height = ui.text_style_height(&text_style);
+            let num_rows = bone_names.len();
+            ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                ui,
+                row_height,
+                num_rows,
+                |ui, row_range| {
+                    for row in row_range {
+                        let text = format!("{}: {} ({})", row, bone_names[row], bone_keyframe_counts[row]);
+                        ui.selectable_value(&mut self.bone_cur_value, row, text);
+                    }
+                },
+            );
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
