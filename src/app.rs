@@ -155,7 +155,7 @@ impl eframe::App for TemplateApp {
                 let mut bone_keyframe_counts = Vec::new();
                 if let Some(m) = &self.vmd_motion {
                     ui.heading(&m.model_name);
-                    for (bn, kfs) in m.get_bone_keyframes() {
+                    for (bn, kfs) in &m.bone_keyframes {
                         bone_names.push(bn);
                         bone_keyframe_counts.push(kfs.len());
                     }
@@ -187,7 +187,7 @@ impl eframe::App for TemplateApp {
                 let mut morph_keyframe_counts = Vec::new();
                 if let Some(m) = &self.vmd_motion {
                     ui.heading(&m.model_name);
-                    for (bn, kfs) in m.get_morph_keyframes() {
+                    for (bn, kfs) in &m.morph_keyframes {
                         morph_names.push(bn);
                         morph_keyframe_counts.push(kfs.len());
                     }
@@ -223,13 +223,13 @@ impl eframe::App for TemplateApp {
                 let mut bone_names = Vec::new();
                 let mut bone_keyframe_counts = Vec::new();
                 if let Some(m) = &self.vmd_motion {
-                    for (bn, kfs) in m.get_bone_keyframes() {
+                    for (bn, kfs) in &m.bone_keyframes {
                         bone_names.push(bn);
                         bone_keyframe_counts.push(kfs.len());
                     }
                     if self.bone_cur_value < bone_names.len() {
-                        let bone_name = &bone_names[self.bone_cur_value];
-                        bone_cur_keyframe = m.get_bone_keyframes().get(bone_name).unwrap().clone();
+                        let bone_name = bone_names[self.bone_cur_value];
+                        bone_cur_keyframe = m.bone_keyframes.get(bone_name).unwrap().clone();
                     }
                 }
     
@@ -285,13 +285,13 @@ impl eframe::App for TemplateApp {
                 let mut morph_names = Vec::new();
                 let mut morph_keyframe_counts = Vec::new();
                 if let Some(m) = &self.vmd_motion {
-                    for (bn, kfs) in m.get_morph_keyframes() {
+                    for (bn, kfs) in &m.morph_keyframes {
                         morph_names.push(bn);
                         morph_keyframe_counts.push(kfs.len());
                     }
                     if self.morph_cur_value < morph_names.len() {
-                        let morph_name = &morph_names[self.morph_cur_value];
-                        morph_cur_keyframe = m.get_morph_keyframes().get(morph_name).unwrap().clone();
+                        let morph_name = morph_names[self.morph_cur_value];
+                        morph_cur_keyframe = m.morph_keyframes.get(morph_name).unwrap().clone();
                     }
                 }
     

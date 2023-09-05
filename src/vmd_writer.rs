@@ -33,9 +33,9 @@ pub fn write_bezier_control_point_pair1<T>(file: &mut T, [x, y, z, w]: [f32; 4])
     file.write_i8(max((w * 127f32) as i8, 0)).unwrap();
 }
 
-pub fn write_bone_keyframe<T>(mut file: &mut T, keyframe: &BoneKeyframe)
+pub fn write_bone_keyframe<T>(mut file: &mut T, name: &String, keyframe: &BoneKeyframe)
     where T: Write {
-    write_string(&mut file, keyframe.name.clone(), 15);
+    write_string(&mut file, name, 15);
     file.write_u32::<LittleEndian>(keyframe.frame).unwrap();
     write_float3(&mut file, keyframe.trans);
     write_float4(&mut file, keyframe.rot);
@@ -46,7 +46,7 @@ pub fn write_bone_keyframe<T>(mut file: &mut T, keyframe: &BoneKeyframe)
 }
 
 
-pub fn write_string<T>(file: &mut T, content: String, len: usize)
+pub fn write_string<T>(file: &mut T, content: &String, len: usize)
     where T: Write {
     let mut content_u8: Vec<u8> = Vec::new();
     for c in content.chars() {
@@ -102,9 +102,9 @@ pub fn write_camera_keyframe<T>(mut file: &mut T, keyframe: &CameraKeyframe)
     file.write_u8(if keyframe.perspective {0} else {1}).unwrap();
 }
 
-pub fn write_morph_keyframe<T>(mut file: &mut T, keyframe: &MorphKeyframe)
+pub fn write_morph_keyframe<T>(mut file: &mut T, name: &String, keyframe: &MorphKeyframe)
     where T: Write {
-    write_string(&mut file, keyframe.name.clone(), 15);
+    write_string(&mut file, name, 15);
     file.write_u32::<LittleEndian>(keyframe.frame).unwrap();
     file.write_f32::<LittleEndian>(keyframe.weight).unwrap();
 }
@@ -126,10 +126,32 @@ pub fn write_shadow_keyframe<T>(file: &mut T, keyframe: &ShadowKeyframe)
 impl Motion {
     pub fn write_vmd(&self, path: &String) {
         let mut file = vec![];
-        write_string(&mut file, VERSION_2.to_string(), 30);
-        write_string(&mut file, (&self.model_name).clone(), 20);
-        write_items(&mut file, &self.bone_keyframes, write_bone_keyframe);
-        write_items(&mut file, &self.morph_keyframes, write_morph_keyframe);
+        write_string(&mut file, &VERSION_2.to_string(), 30);
+        write_string(&mut file, &self.model_name, 20);
+        {
+            let mut bone_kf_count = 0;
+            for (_, list) in &self.bone_keyframes {
+                bone_kf_count += list.len();
+            }
+            file.write_u32::<LittleEndian>(bone_kf_count as u32).unwrap();
+            for (name, list) in &self.bone_keyframes {
+                for keyframe in list {
+                    write_bone_keyframe(&mut file, name, keyframe)
+                }
+            }
+        }
+        {
+            let mut morph_kf_count = 0;
+            for (_, list) in &self.morph_keyframes {
+                morph_kf_count += list.len();
+            }
+            file.write_u32::<LittleEndian>(morph_kf_count as u32).unwrap();
+            for (name, list) in &self.morph_keyframes {
+                for keyframe in list {
+                    write_morph_keyframe(&mut file, name, keyframe)
+                }
+            }
+        }
         write_items(&mut file, &self.camera_keyframes, write_camera_keyframe);
         write_items(&mut file, &self.light_keyframes, write_light_keyframe);
         write_items(&mut file, &self.shadow_keyframes, write_shadow_keyframe);

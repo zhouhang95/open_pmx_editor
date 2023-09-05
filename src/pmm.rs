@@ -15,7 +15,7 @@ use std::io::{SeekFrom, Cursor};
 use crate::vmd_reader::{read_string, read_bezier_control_point_pair1};
 use crate::common::{read_items, read_fix_items, read_float3, read_float4};
 use crate::motion::*;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 const PMM_HEADER: &str = "Polygon Movie maker 0002";
 
@@ -74,7 +74,7 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
     let v_scroll = file.read_u32::<LittleEndian>().unwrap();
     let last_frame = file.read_u32::<LittleEndian>().unwrap();
 
-    let mut bone_key_frames: HashMap<u32, BoneKeyframe> = HashMap::new();
+    let mut bone_key_frames: BTreeMap<u32, (usize, BoneKeyframe)> = BTreeMap::new();
     for _ in 0..bone_names.len() {
         read_bone_frame(&mut file, &mut bone_key_frames, &bone_names);
     }
@@ -83,7 +83,7 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
         read_bone_frame(&mut file, &mut bone_key_frames, &bone_names);
     }
 
-    let mut morph_key_frames: HashMap<u32, MorphKeyframe> = HashMap::new();
+    let mut morph_key_frames: BTreeMap<u32, (usize, MorphKeyframe)> = BTreeMap::new();
     for _ in 0..morph_names.len() {
         read_morph_frame(&mut file, &mut morph_key_frames, &morph_names);
     }
@@ -120,10 +120,8 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
         let name = bone_names[i].clone();
         let mut index = i;
         loop {
-            let kf =  &bone_key_frames[&(index as u32)];
-            let next: usize = kf.name.parse().unwrap();
-            bone_frame_list.push(BoneKeyframe {
-                name: name.clone(),
+            let (next, kf) =  &bone_key_frames[&(index as u32)];
+            bone_frame_list.push((name.clone(), BoneKeyframe {
                 frame: kf.frame,
                 trans: kf.trans,
                 rot: kf.rot,
@@ -131,12 +129,19 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
                 tyc: kf.tyc,
                 tzc: kf.tzc,
                 rc: kf.rc,
-            });
-            if next != 0 {
-                index = next;
+            }));
+            if *next != 0 {
+                index = *next;
             } else {
                 break;
             }
+        }
+    }
+    let mut bone_keyframes: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
+    {
+        for (name, kf) in &bone_frame_list {
+            bone_keyframes.entry(name.clone()).or_insert(vec![]);
+            bone_keyframes.get_mut(name).unwrap().push(kf.clone());
         }
     }
 
@@ -146,25 +151,30 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
         let name = morph_names[i].clone();
         let mut index = i;
         loop {
-            let kf =  &morph_key_frames[&(index as u32)];
-            let next: usize = kf.name.parse().unwrap();
-            morph_frame_list.push(MorphKeyframe {
-                name: name.clone(),
+            let (next, kf) =  &morph_key_frames[&(index as u32)];
+            morph_frame_list.push((name.clone(), MorphKeyframe {
                 frame: kf.frame,
                 weight: kf.weight,
-            });
-            if next != 0 {
-                index = next;
+            }));
+            if *next != 0 {
+                index = *next;
             } else {
                 break;
             }
         }
     }
+    let mut morph_keyframes: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();
+    {
+        for (name, kf) in &morph_frame_list {
+            morph_keyframes.entry(name.clone()).or_insert(vec![]);
+            morph_keyframes.get_mut(name).unwrap().push(kf.clone());
+        }
+    }
 
     Motion {
         model_name: name,
-        bone_keyframes: bone_frame_list,
-        morph_keyframes: morph_frame_list,
+        bone_keyframes,
+        morph_keyframes,
         camera_keyframes: vec![],
         light_keyframes: vec![],
         shadow_keyframes: vec![],
@@ -173,7 +183,7 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
 }
 
 pub fn read_bone_frame<T>(mut file: &mut T,
-                       keyframes: &mut HashMap<u32, BoneKeyframe>, names: &Vec<String>)
+                       keyframes: &mut BTreeMap<u32, (usize, BoneKeyframe)>, names: &Vec<String>)
     where T: Read {
     let data_index = if keyframes.len() < names.len() {
         keyframes.len() as u32
@@ -201,8 +211,7 @@ pub fn read_bone_frame<T>(mut file: &mut T,
     let physics_disabled = file.read_u8().unwrap() == 1;
 
 
-    keyframes.insert(data_index,  BoneKeyframe {
-        name: next_index.to_string(),
+    keyframes.insert(data_index,  (next_index, BoneKeyframe {
         frame,
         trans,
         rot,
@@ -210,11 +219,11 @@ pub fn read_bone_frame<T>(mut file: &mut T,
         tyc: [tyc[0], tyc[1], tyc[2], tyc[3]],
         tzc: [tzc[0], tzc[1], tzc[2], tzc[3]],
         rc:  [rc[0], rc[1], rc[2], rc[3]],
-    });
+    }));
 }
 
 pub fn read_morph_frame<T>(file: &mut T,
-                         keyframes: &mut HashMap<u32, MorphKeyframe>, names: &Vec<String>)
+                         keyframes: &mut BTreeMap<u32, (usize, MorphKeyframe)>, names: &Vec<String>)
     where T: Read {
     let data_index = if keyframes.len() < names.len() {
         keyframes.len() as u32
@@ -229,11 +238,10 @@ pub fn read_morph_frame<T>(file: &mut T,
     let weight = file.read_f32::<LittleEndian>().unwrap();
     let selected = file.read_u8().unwrap() == 1;
 
-    keyframes.insert(data_index,  MorphKeyframe {
-        name: next_index.to_string(),
+    keyframes.insert(data_index,  (next_index, MorphKeyframe {
         frame,
         weight,
-    });
+    }));
 }
 pub fn read_op_frame<T>(mut file: &mut T, ik_count: usize, op_count: usize, inited: bool)
     where T: Read {
@@ -322,8 +330,8 @@ fn read_camera_motion<T>(file: &mut T) -> Motion
     ));
     Motion {
         model_name: "Camera".to_string(),
-        bone_keyframes: vec![],
-        morph_keyframes: vec![],
+        bone_keyframes: Default::default(),
+        morph_keyframes: Default::default(),
         camera_keyframes,
         light_keyframes: vec![],
         shadow_keyframes: vec![],

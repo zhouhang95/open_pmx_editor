@@ -2,6 +2,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::fs::File;
@@ -56,9 +57,9 @@ pub fn read_header(mut file: &mut File) -> String {
     }
 }
 
-pub fn read_bone_keyframe(mut file: &mut File) -> BoneKeyframe {
-    BoneKeyframe {
-        name: read_string(&mut file, 15),
+pub fn read_bone_keyframe(mut file: &mut File) -> (String, BoneKeyframe) {
+    let name = read_string(&mut file, 15);
+    let keyframe = BoneKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         trans: read_float3(&mut file),
         rot: read_float4(&mut file),
@@ -66,7 +67,8 @@ pub fn read_bone_keyframe(mut file: &mut File) -> BoneKeyframe {
         tyc: read_bezier_control_point_pair4(&mut file),
         tzc: read_bezier_control_point_pair4(&mut file),
         rc:  read_bezier_control_point_pair4(&mut file),
-    }
+    };
+    (name, keyframe)
 }
 
 pub fn read_camera_keyframe(mut file: &mut File) -> CameraKeyframe {
@@ -86,12 +88,13 @@ pub fn read_camera_keyframe(mut file: &mut File) -> CameraKeyframe {
     }
 }
 
-pub fn read_morph_keyframe(mut file: &mut File) -> MorphKeyframe {
-    MorphKeyframe {
-        name: read_string(&mut file, 15),
+pub fn read_morph_keyframe(mut file: &mut File) -> (String, MorphKeyframe) {
+    let name = read_string(&mut file, 15);
+    let keyframe =  MorphKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         weight: file.read_f32::<LittleEndian>().unwrap(),
-    }
+    };
+    (name, keyframe)
 }
 
 pub fn read_light_keyframe(file: &mut File) -> LightKeyframe {
@@ -132,10 +135,27 @@ pub fn read_ik_keyframe(file: &mut File) -> IkKeyframe {
 impl Motion {
     pub fn read_vmd(path: &Path) -> Motion {
         let mut file = File::open(path).unwrap();
+        let model_name = read_header(&mut file);
+        let mut bone_keyframes: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
+        {
+            let bone_keyframe_list = read_items(&mut file, read_bone_keyframe);
+            for (name, kf) in &bone_keyframe_list {
+                bone_keyframes.entry(name.clone()).or_insert(vec![]);
+                bone_keyframes.get_mut(name).unwrap().push(kf.clone());
+            }
+        }
+        let mut morph_keyframes: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();
+        {
+            let morph_keyframe_list = read_items(&mut file, read_morph_keyframe);
+            for (name, kf) in &morph_keyframe_list {
+                morph_keyframes.entry(name.clone()).or_insert(vec![]);
+                morph_keyframes.get_mut(name).unwrap().push(kf.clone());
+            }
+        }
         Motion {
-            model_name:       read_header(&mut file),
-            bone_keyframes:   read_items(&mut file, read_bone_keyframe),
-            morph_keyframes:  read_items(&mut file, read_morph_keyframe),
+            model_name,
+            bone_keyframes,
+            morph_keyframes,
             camera_keyframes: read_items(&mut file, read_camera_keyframe),
             light_keyframes:  read_items(&mut file, read_light_keyframe),
             shadow_keyframes: read_items(&mut file, read_shadow_keyframe),
