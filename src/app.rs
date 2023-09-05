@@ -143,10 +143,12 @@ impl eframe::App for TemplateApp {
                 row_height,
                 num_rows,
                 |ui, row_range| {
-                    for row in row_range {
-                        let text = format!("{}: {} ({})", row, bone_names[row], bone_keyframe_counts[row]);
-                        ui.selectable_value(&mut self.bone_cur_value, row, text);
-                    }
+                    ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
+                        for row in row_range {
+                            let text = format!("{:3}: {} ({})", row, bone_names[row], bone_keyframe_counts[row]);
+                            ui.selectable_value(&mut self.bone_cur_value, row, text);
+                        }
+                    });
                 },
             );
         });
