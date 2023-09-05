@@ -24,6 +24,7 @@ pub struct TemplateApp {
     page: Page,
 
     bone_cur_value: usize,
+    morph_cur_value: usize,
     log_text: String,
 }
 
@@ -33,6 +34,7 @@ impl Default for TemplateApp {
             vmd_path: None,
             vmd_motion: None,
             bone_cur_value: 0,
+            morph_cur_value: 0,
             log_text: String::new(),
             page: Page::VmdBone,
         }
@@ -181,6 +183,36 @@ impl eframe::App for TemplateApp {
                 );
             },
             Page::VmdMorph => {
+                let mut morph_names = Vec::new();
+                let mut morph_keyframe_counts = Vec::new();
+                if let Some(m) = &self.vmd_motion {
+                    ui.heading(&m.model_name);
+                    for (bn, kfs) in m.get_morph_keyframes() {
+                        morph_names.push(bn);
+                        morph_keyframe_counts.push(kfs.len());
+                    }
+                }
+                ui.horizontal(|ui| {
+                    let text = format!("Count: {}", morph_names.len());
+                    ui.heading(text);
+                });
+                ui.separator();
+                let text_style = TextStyle::Body;
+                let row_height = ui.text_style_height(&text_style);
+                let num_rows = morph_names.len();
+                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                    ui,
+                    row_height,
+                    num_rows,
+                    |ui, row_range| {
+                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
+                            for row in row_range {
+                                let text = format!("{:3}: {} ({})", row, morph_names[row], morph_keyframe_counts[row]);
+                                ui.selectable_value(&mut self.morph_cur_value, row, text);
+                            }
+                        });
+                    },
+                );
             },
             _ => {},
         });
@@ -249,7 +281,58 @@ impl eframe::App for TemplateApp {
                     });
             },
             Page::VmdMorph => {
-
+                let mut morph_cur_keyframe = Vec::new();
+                let mut morph_names = Vec::new();
+                let mut morph_keyframe_counts = Vec::new();
+                if let Some(m) = &self.vmd_motion {
+                    for (bn, kfs) in m.get_morph_keyframes() {
+                        morph_names.push(bn);
+                        morph_keyframe_counts.push(kfs.len());
+                    }
+                    if self.morph_cur_value < morph_names.len() {
+                        let morph_name = &morph_names[self.morph_cur_value];
+                        morph_cur_keyframe = m.get_morph_keyframes().get(morph_name).unwrap().clone();
+                    }
+                }
+    
+                let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
+    
+                let table = TableBuilder::new(ui)
+                    .striped(true)
+                    .resizable(true)
+                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .column(Column::remainder())
+                    .min_scrolled_height(0.0);
+    
+                table
+                    .header(20.0, |mut header| {
+                        header.col(|ui| {
+                            ui.strong("Index");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Frame");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Weight");
+                        });
+                    })
+                    .body(|body|  {
+                        body.rows(text_height, morph_cur_keyframe.len(), |row_index, mut row| {
+                            row.col(|ui| {
+                                ui.label(row_index.to_string());
+                            });
+                            row.col(|ui| {
+                                let frame = morph_cur_keyframe[row_index].frame;
+                                ui.label(frame.to_string());
+                            });
+                            row.col(|ui| {
+                                let weight = morph_cur_keyframe[row_index].weight;
+                                ui.label(weight.to_string());
+                            });
+                        });
+                    });
             },
             _ => {},
         });
