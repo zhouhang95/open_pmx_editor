@@ -154,15 +154,67 @@ impl eframe::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
+            use egui_extras::{Column, TableBuilder};
+            let mut bone_cur_keyframe = Vec::new();
+            let mut bone_names = Vec::new();
+            let mut bone_keyframe_counts = Vec::new();
+            if let Some(m) = &self.vmd_motion {
+                for (bn, kfs) in m.get_bone_keyframes() {
+                    bone_names.push(bn);
+                    bone_keyframe_counts.push(kfs.len());
+                }
+                if self.bone_cur_value < bone_names.len() {
+                    let bone_name = &bone_names[self.bone_cur_value];
+                    bone_cur_keyframe = m.get_bone_keyframes().get(bone_name).unwrap().clone();
+                }
+            }
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
+            let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
+
+            let table = TableBuilder::new(ui)
+                .striped(true)
+                .resizable(true)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                .column(Column::auto())
+                .column(Column::auto())
+                .column(Column::initial(100.0))
+                .column(Column::remainder())
+                .min_scrolled_height(0.0);
+
+            table
+                .header(20.0, |mut header| {
+                    header.col(|ui| {
+                        ui.strong("Index");
+                    });
+                    header.col(|ui| {
+                        ui.strong("Frame");
+                    });
+                    header.col(|ui| {
+                        ui.strong("Translate");
+                    });
+                    header.col(|ui| {
+                        ui.strong("Rotation");
+                    });
+                })
+                .body(|body|  {
+                    body.rows(text_height, bone_cur_keyframe.len(), |row_index, mut row| {
+                        row.col(|ui| {
+                            ui.label(row_index.to_string());
+                        });
+                        row.col(|ui| {
+                            let frame = bone_cur_keyframe[row_index].frame;
+                            ui.label(frame.to_string());
+                        });
+                        row.col(|ui| {
+                            let trans = bone_cur_keyframe[row_index].trans;
+                            ui.label(format!("{:.2}, {:.2}, {:.2}", trans[0], trans[1], trans[2]));
+                        });
+                        row.col(|ui| {
+                            let rot = bone_cur_keyframe[row_index].rot;
+                            ui.label(format!("{}, {}, {}, {}", rot[0], rot[1], rot[2], rot[3]));
+                        });
+                    });
+                });
         });
 
         if false {
