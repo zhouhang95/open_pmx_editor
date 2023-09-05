@@ -150,7 +150,21 @@ impl Motion {
                 }
             }
             if not_zero {
-                keyframes.extend_from_slice(v);
+                if v.len() >= 3 {
+                    let mut need_remove = Vec::new();
+                    for i in 1..(v.len()-1) {
+                        if v[i-1].weight == v[i].weight && v[i].weight == v[i+1].weight {
+                            need_remove.push(i);
+                        }
+                    }
+                    for i in 0..v.len() {
+                        if !need_remove.contains(&i) {
+                            keyframes.push(v[i].clone());
+                        }
+                    }
+                } else {
+                    keyframes.extend_from_slice(v);
+                }
             }
         }
         return keyframes;
