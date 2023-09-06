@@ -153,8 +153,7 @@ pub fn read_ik_keyframe(file: &mut Cursor<Vec<u8>>) -> IkKeyframe {
 }
 
 impl Motion {
-    pub fn read_vmd(path: &Path) -> Motion {
-        let content = std::fs::read(path).unwrap();
+    pub fn read(content: Vec<u8>, path: &str) -> Motion {
         let mut file = std::io::Cursor::new(content);
 
         let model_name = read_header(&mut file);
@@ -188,6 +187,7 @@ impl Motion {
             light_keyframes:  read_items(&mut file, read_light_keyframe),
             shadow_keyframes: read_items(&mut file, read_shadow_keyframe),
             ik_keyframes:     read_items(&mut file, read_ik_keyframe),
+            path: path.to_string(),
         }
     }
 }

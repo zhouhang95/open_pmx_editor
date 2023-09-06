@@ -12,6 +12,7 @@ pub struct Motion {
     pub light_keyframes:  Vec<LightKeyframe>,
     pub shadow_keyframes: Vec<ShadowKeyframe>,
     pub ik_keyframes:     Vec<IkKeyframe>,
+    pub path: String,
 }
 
 #[derive(Clone, Copy)]
@@ -91,6 +92,7 @@ impl Motion {
             light_keyframes:  Vec::new(),
             shadow_keyframes: Vec::new(),
             ik_keyframes:     Vec::new(),
+            path: Default::default(),
         }
     }
 
@@ -156,6 +158,7 @@ impl Motion {
             light_keyframes: self.light_keyframes.clone(),
             shadow_keyframes: self.shadow_keyframes.clone(),
             ik_keyframes: self.ik_keyframes.clone(),
+            path: self.path.clone(),
         }
     }
 

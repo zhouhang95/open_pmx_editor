@@ -20,7 +20,6 @@ enum Page {
 }
 
 pub struct TemplateApp {
-    vmd_path: Option<std::path::PathBuf>,
     vmd_motion: Option<Motion>,
     pmx_data: Option<Pmx>,
     pmx_bone_cur_value: usize,
@@ -35,7 +34,6 @@ pub struct TemplateApp {
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            vmd_path: None,
             vmd_motion: None,
             bone_cur_value: 0,
             morph_cur_value: 0,
@@ -106,8 +104,8 @@ impl eframe::App for TemplateApp {
                         if let Some(p) = &path {
                             let ext = p.extension();
                             if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
-                                self.vmd_path = path.clone();
-                                self.vmd_motion = Some(Motion::read_vmd(p));
+                                let content = std::fs::read(p).unwrap();
+                                self.vmd_motion = Some(Motion::read(content, p.to_str().unwrap()));
                             } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
                                 let content = std::fs::read(p).unwrap();
                                 self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));

@@ -179,6 +179,7 @@ pub fn read_model(mut file: &mut Cursor<Vec<u8>>) -> Motion {
         light_keyframes: vec![],
         shadow_keyframes: vec![],
         ik_keyframes: vec![],
+        path,
     }.clear_empty_keyframe()
 }
 
@@ -333,6 +334,7 @@ fn read_camera_motion(file: &mut Cursor<Vec<u8>>) -> Motion {
         light_keyframes: vec![],
         shadow_keyframes: vec![],
         ik_keyframes: vec![],
+        path: Default::default(),
     }
 }
 pub fn read_pmm(path: &Path) -> Vec<Motion> {
