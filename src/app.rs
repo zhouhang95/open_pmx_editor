@@ -113,6 +113,27 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
+                    if ui.button("Save PMX As ...").clicked() {
+                        if let Some(m) = &self.pmx_data {
+                            let path = rfd::FileDialog::new()
+                                .add_filter("Poygon Mesh data eXtension", &["pmx"])
+                                .save_file();
+                            if let Some(p) = &path {
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Save VMD As ...").clicked() {
+                        if let Some(m) = &self.vmd_motion {
+                            let path = rfd::FileDialog::new()
+                                .add_filter("Vocaloid Motion Data", &["vmd"])
+                                .save_file();
+                            if let Some(p) = &path {
+                                m.write_vmd(p.to_str().unwrap());
+                            }
+                        }
+                        ui.close_menu();
+                    }
                     if ui.button("Clean Empty Keyframes").clicked() {
                         if let Some(m) = &mut self.vmd_motion {
                             *m = m.clear_empty_keyframe();

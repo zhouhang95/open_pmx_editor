@@ -125,7 +125,7 @@ pub fn write_shadow_keyframe<T>(file: &mut T, keyframe: &ShadowKeyframe)
 }
 
 impl Motion {
-    pub fn write_vmd(&self, path: &String) {
+    pub fn write_vmd(&self, path: &str) {
         let mut file = vec![];
         write_string(&mut file, &VERSION_2.to_string(), 30);
         write_string(&mut file, &self.model_name, 20);
