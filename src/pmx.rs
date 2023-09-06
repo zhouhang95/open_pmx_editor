@@ -13,7 +13,7 @@ use byteorder::{LE, ReadBytesExt};
 use glam::*;
 use uuid::Uuid;
 
-use crate::motion::Motion;
+use crate::{motion::Motion, common::*};
 use bitflags::bitflags;
 
 
@@ -292,30 +292,6 @@ pub struct MorphMatItem {
     pub toon_tint: Vec4,
 }
 
-pub fn read_vec2f(file: &mut Cursor<Vec<u8>>) -> Vec2 {
-    Vec2::new(
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap()
-    )
-}
-
-pub fn read_vec3f(file: &mut Cursor<Vec<u8>>) -> Vec3 {
-    Vec3::new(
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap()
-    )
-}
-
-pub fn read_vec4f(file: &mut Cursor<Vec<u8>>) -> Vec4 {
-    Vec4::new(
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap(),
-        file.read_f32::<LE>().unwrap()
-    )
-}
-
 impl Pmx {
     fn read_string(file: &mut Cursor<Vec<u8>>, utf8: bool) -> String {
         let len = file.read_i32::<LE>().unwrap() as usize;
@@ -405,12 +381,12 @@ impl Pmx {
         for _ in 0..len {
             let name = Pmx::read_string(file, utf8);
             let name_en = Pmx::read_string(file, utf8);
-            let diffuse = read_vec4f(file);
-            let specular = read_vec3f(file);
+            let diffuse = read_float4(file);
+            let specular = read_float3(file);
             let specular_strength = file.read_f32::<LE>().unwrap();
-            let ambient = read_vec3f(file);
+            let ambient = read_float3(file);
             let draw_flag = DrawFlags::from_bits(file.read_u8().unwrap()).unwrap();
-            let edge_color = read_vec4f(file);
+            let edge_color = read_float4(file);
             let edge_scale = file.read_f32::<LE>().unwrap();
             let tex_index = Pmx::read_int(file, texture_index_size);
             let env_index = Pmx::read_int(file, texture_index_size);
@@ -457,7 +433,7 @@ impl Pmx {
         for i in 0..len {
             let name = Pmx::read_string(file, utf8);
             let name_en = Pmx::read_string(file, utf8);
-            let pos = read_vec3f(file);
+            let pos = read_float3(file);
             let parent_index = Pmx::read_int(file, bone_index_size);
             let parent_index = if parent_index >= 0 {
                 Some(parent_index as usize)
@@ -469,7 +445,7 @@ impl Pmx {
             let bone_tail_pos = if bone_flags.contains(BoneFlags::INDEXED_TAIL_POS) {
                 BoneTailPos::Bone(Pmx::read_int(file, bone_index_size))
             } else {
-                BoneTailPos::Pos(read_vec3f(file))
+                BoneTailPos::Pos(read_float3(file))
             };
             let inherit = if bone_flags.contains(BoneFlags::INHERIT_ROTATION) || bone_flags.contains(BoneFlags::INHERIT_TRANSLATION) {
                 let parent_index = Pmx::read_int(file, bone_index_size);
@@ -479,12 +455,12 @@ impl Pmx {
                 None
             };
             let fixed_axis = if bone_flags.contains(BoneFlags::FIXED_AXIS) {
-                Some(read_vec3f(file))
+                Some(read_float3(file))
             } else {
                 None
             };
             let local_axis = if bone_flags.contains(BoneFlags::LOCAL_AXIS) {
-                Some((read_vec3f(file), read_vec3f(file)))
+                Some((read_float3(file), read_float3(file)))
             } else {
                 None
             };
@@ -502,8 +478,8 @@ impl Pmx {
                 for i in 0..link_count {
                     let bone = Pmx::read_int(file, bone_index_size);
                     let limit = if file.read_u8().unwrap() == 1 {
-                        let limit_min = read_vec3f(file);
-                        let limit_max = read_vec3f(file);
+                        let limit_min = read_float3(file);
+                        let limit_max = read_float3(file);
                         Some((limit_min, limit_max))
                     } else {
                         None
@@ -557,14 +533,14 @@ impl Pmx {
             assert_eq!(category, 0);
             let rigidbody_a = Pmx::read_int(file, rigidbody_index_size);
             let rigidbody_b = Pmx::read_int(file, rigidbody_index_size);
-            let pos = read_vec3f(file);
-            let rot = read_vec3f(file);
-            let pos_min = read_vec3f(file);
-            let pos_max = read_vec3f(file);
-            let rot_min = read_vec3f(file);
-            let rot_max = read_vec3f(file);
-            let pos_spring = read_vec3f(file);
-            let rot_spring = read_vec3f(file);
+            let pos = read_float3(file);
+            let rot = read_float3(file);
+            let pos_min = read_float3(file);
+            let pos_max = read_float3(file);
+            let rot_min = read_float3(file);
+            let rot_max = read_float3(file);
+            let pos_spring = read_float3(file);
+            let rot_spring = read_float3(file);
             vct.push(Joint {
                 name,
                 name_en,
@@ -600,9 +576,9 @@ impl Pmx {
                 2 => RigidbodyShape::Capsule,
                 _ => unreachable!(),
             };
-            let size = read_vec3f(file);
-            let pos = read_vec3f(file);
-            let rot = read_vec3f(file);
+            let size = read_float3(file);
+            let pos = read_float3(file);
+            let rot = read_float3(file);
             let mass = file.read_f32::<LE>().unwrap();
             let linear_damping = file.read_f32::<LE>().unwrap();
             let angular_damping = file.read_f32::<LE>().unwrap();
@@ -701,7 +677,7 @@ impl Pmx {
                 let mut v = Vec::new();
                 for __ in 0..count {
                     let index = Pmx::read_int(file, vertex_index_size) as u32;
-                    let trans = read_vec3f(file);
+                    let trans = read_float3(file);
                     v.push(MorphVertexItem {
                         index,
                         trans,
@@ -712,8 +688,8 @@ impl Pmx {
                 let mut v = Vec::new();
                 for __ in 0..count {
                     let index = Pmx::read_int(file, bone_index_size) as u32;
-                    let trans = read_vec3f(file);
-                    let rot = read_vec4f(file);
+                    let trans = read_float3(file);
+                    let rot = read_float4(file);
                     v.push(MorphBoneItem {
                         index,
                         trans,
@@ -725,7 +701,7 @@ impl Pmx {
                 let mut v = Vec::new();
                 for __ in 0..count {
                     let index = Pmx::read_int(file, vertex_index_size) as u32;
-                    let trans = read_vec4f(file);
+                    let trans = read_float4(file);
                     v.push(MorphUvItem {
                         index,
                         trans,
@@ -743,15 +719,15 @@ impl Pmx {
                         1 => BlendMode::Add, 
                         _ => unreachable!(),
                     };
-                    let diffuse = read_vec4f(file);
-                    let specular = read_vec3f(file);
+                    let diffuse = read_float4(file);
+                    let specular = read_float3(file);
                     let specularity = file.read_f32::<LE>().unwrap();
-                    let ambient = read_vec3f(file);
-                    let edge_color = read_vec4f(file);
+                    let ambient = read_float3(file);
+                    let edge_color = read_float4(file);
                     let edge_size = file.read_f32::<LE>().unwrap();
-                    let texture_tint = read_vec4f(file);
-                    let environment_tint = read_vec4f(file);
-                    let toon_tint = read_vec4f(file);
+                    let texture_tint = read_float4(file);
+                    let environment_tint = read_float4(file);
+                    let toon_tint = read_float4(file);
                     v.push(MorphMatItem {
                         index,
                         blend_mode,
@@ -783,8 +759,8 @@ impl Pmx {
                 for __ in 0..count {
                     let index = Pmx::read_int(file, rigidbody_index_size) as u32;
                     let local = file.read_u8().unwrap() == 1;
-                    let trans_speed = read_vec3f(file);
-                    let rot_torque = read_vec3f(file);
+                    let trans_speed = read_float3(file);
+                    let rot_torque = read_float3(file);
                     v.push(MorphRigidbodyItem {
                         index,
                         local,
@@ -813,9 +789,9 @@ impl Pmx {
         let len = file.read_u32::<LE>().unwrap();
         let mut vct = Vec::with_capacity(len as usize);
         for i in 0..len {
-            let pos = read_vec3f(file);
-            let nrm = read_vec3f(file);
-            let uv = read_vec2f(file);
+            let pos = read_float3(file);
+            let nrm = read_float3(file);
+            let uv = read_float2(file);
             let weight_type = file.read_u8().unwrap();
             let weight = if weight_type == 0 {
                 let a = Pmx::read_int(file, bone_index_size);
@@ -831,15 +807,15 @@ impl Pmx {
                 let c = Pmx::read_int(file, bone_index_size);
                 let d = Pmx::read_int(file, bone_index_size);
                 let index = ivec4(a, b, c, d);
-                let weight = read_vec4f(file);
+                let weight = read_float4(file);
                 VertexWeight::Four(index, weight)
             } else if weight_type == 3 {
                 let a = Pmx::read_int(file, bone_index_size);
                 let b = Pmx::read_int(file, bone_index_size);
                 let weight = file.read_f32::<LE>().unwrap();
-                let c = read_vec3f(file);
-                let r0 = read_vec3f(file);
-                let r1 = read_vec3f(file);
+                let c = read_float3(file);
+                let r0 = read_float3(file);
+                let r1 = read_float3(file);
                 VertexWeight::Sphere(a, b, weight, c, r0, r1)
             } else if weight_type == 4 {
                 let a = Pmx::read_int(file, bone_index_size);
@@ -847,7 +823,7 @@ impl Pmx {
                 let c = Pmx::read_int(file, bone_index_size);
                 let d = Pmx::read_int(file, bone_index_size);
                 let index = ivec4(a, b, c, d);
-                let weight = read_vec4f(file);
+                let weight = read_float4(file);
                 VertexWeight::Quat(index, weight)
             } else {
                 unreachable!()

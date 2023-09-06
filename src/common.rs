@@ -6,6 +6,18 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write, Cursor};
 use glam::*;
 
+pub fn read_float2<T>(file: &mut T) -> Vec2
+    where T: Read {
+    let x = file.read_f32::<LittleEndian>().unwrap();
+    let y = file.read_f32::<LittleEndian>().unwrap();
+    vec2(x, y)
+}
+pub fn write_float2<T>(file: &mut T, v: Vec2)
+    where T: Write {
+    file.write_f32::<LittleEndian>(v.x).unwrap();
+    file.write_f32::<LittleEndian>(v.y).unwrap();
+}
+
 pub fn read_float3<T>(file: &mut T) -> Vec3
     where T: Read {
     let x = file.read_f32::<LittleEndian>().unwrap();
