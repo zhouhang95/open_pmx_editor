@@ -1,9 +1,10 @@
+#![allow(dead_code, unused_imports, unused_variables)]
 use std::ffi::OsStr;
 
 use egui::{TextStyle, ScrollArea};
 use egui_extras::{Column, TableBuilder};
 
-use crate::{motion::Motion, pmm::read_pmm};
+use crate::{motion::Motion, pmm::read_pmm, pmx::Pmx};
 
 #[derive(PartialEq)]
 enum Page {
@@ -21,6 +22,9 @@ enum Page {
 pub struct TemplateApp {
     vmd_path: Option<std::path::PathBuf>,
     vmd_motion: Option<Motion>,
+    pmx_data: Option<Pmx>,
+    pmx_bone_cur_value: usize,
+    pmx_morph_cur_value: usize,
     page: Page,
 
     bone_cur_value: usize,
@@ -37,6 +41,9 @@ impl Default for TemplateApp {
             morph_cur_value: 0,
             log_text: String::new(),
             page: Page::VmdBone,
+            pmx_data: None,
+            pmx_bone_cur_value: 0,
+            pmx_morph_cur_value: 0,
         }
     }
 }
@@ -95,11 +102,15 @@ impl eframe::App for TemplateApp {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Open").clicked() {
-                        self.vmd_path = rfd::FileDialog::new().pick_file();
-                        if let Some(p) = &self.vmd_path {
+                        let path = rfd::FileDialog::new().pick_file();
+                        if let Some(p) = &path {
                             let ext = p.extension();
                             if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
+                                self.vmd_path = path.clone();
                                 self.vmd_motion = Some(Motion::read_vmd(p));
+                            } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
+                                let content = std::fs::read(p).unwrap();
+                                self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
                             }
                         }
                         ui.close_menu();
@@ -138,12 +149,12 @@ impl eframe::App for TemplateApp {
             });
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.page, Page::Info, "Info");
-                ui.selectable_value(&mut self.page, Page::Material, "Material");
+                // ui.selectable_value(&mut self.page, Page::Material, "Material");
                 ui.selectable_value(&mut self.page, Page::Bone, "Bone");
                 ui.selectable_value(&mut self.page, Page::Morph, "Morph");
-                ui.selectable_value(&mut self.page, Page::Frame, "Frame");
-                ui.selectable_value(&mut self.page, Page::RigidBody, "RigidBody");
-                ui.selectable_value(&mut self.page, Page::Joint, "Joint");
+                // ui.selectable_value(&mut self.page, Page::Frame, "Frame");
+                // ui.selectable_value(&mut self.page, Page::RigidBody, "RigidBody");
+                // ui.selectable_value(&mut self.page, Page::Joint, "Joint");
                 ui.selectable_value(&mut self.page, Page::VmdBone, "VmdBone");
                 ui.selectable_value(&mut self.page, Page::VmdMorph, "VmdMorph");
             });
@@ -214,10 +225,76 @@ impl eframe::App for TemplateApp {
                     },
                 );
             },
+            Page::Bone => {
+                let mut names = Vec::new();
+                if let Some(m) = &self.pmx_data {
+                    ui.heading(&m.name);
+                    for b in &m.bones {
+                        names.push(b.name.clone());
+                    }
+                }
+                ui.horizontal(|ui| {
+                    let text = format!("Count: {}", names.len());
+                    ui.heading(text);
+                });
+                ui.separator();
+                let text_style = TextStyle::Body;
+                let row_height = ui.text_style_height(&text_style);
+                let num_rows = names.len();
+                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                    ui,
+                    row_height,
+                    num_rows,
+                    |ui, row_range| {
+                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
+                            for row in row_range {
+                                let text = format!("{:3}: {}", row, names[row]);
+                                ui.selectable_value(&mut self.pmx_bone_cur_value, row, text);
+                            }
+                        });
+                    },
+                );
+            },
+            Page::Morph => {
+                let mut names = Vec::new();
+                if let Some(m) = &self.pmx_data {
+                    ui.heading(&m.name);
+                    for morph in &m.morphs {
+                        names.push(morph.name.clone());
+                    }
+                }
+                ui.horizontal(|ui| {
+                    let text = format!("Count: {}", names.len());
+                    ui.heading(text);
+                });
+                ui.separator();
+                let text_style = TextStyle::Body;
+                let row_height = ui.text_style_height(&text_style);
+                let num_rows = names.len();
+                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                    ui,
+                    row_height,
+                    num_rows,
+                    |ui, row_range| {
+                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
+                            for row in row_range {
+                                let text = format!("{:3}: {}", row, names[row]);
+                                ui.selectable_value(&mut self.pmx_morph_cur_value, row, text);
+                            }
+                        });
+                    },
+                );
+            },
             _ => {},
         });
 
         egui::CentralPanel::default().show(ctx, |ui| match self.page {
+            Page::Info => {
+                if let Some(m) = &self.pmx_data {
+                    ui.heading(&m.name);
+                    ui.label(&m.comment);
+                }
+            },
             Page::VmdBone => {
                 let mut bone_cur_keyframe = Vec::new();
                 let mut bone_names = Vec::new();

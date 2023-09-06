@@ -6,4 +6,5 @@ mod pmm;
 mod motion;
 mod vmd_reader;
 mod vmd_writer;
+mod pmx;
 pub use app::TemplateApp;
