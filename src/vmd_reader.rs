@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{prelude::*, Cursor};
 use std::path::Path;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_31J;
@@ -25,10 +25,29 @@ pub fn read_string<T>(file: &mut T, len: usize) -> String
         where T: Read {
     let mut string_raw = vec![0u8; len];
     file.read(&mut string_raw).unwrap();
-    WINDOWS_31J.decode(&string_raw, DecoderTrap::Ignore).unwrap().replace("\0", "")
+    read_string_raw(&string_raw)
 }
 
-pub fn read_bezier_control_point_pair4(file: &mut File) -> [f32; 4] {
+fn read_string_raw(string_raw: &[u8]) -> String {
+    WINDOWS_31J.decode(string_raw, DecoderTrap::Ignore).unwrap()
+        .split('\0').next().unwrap()
+        .to_string()
+}
+
+fn read_string_as_u128(file: &mut Cursor<Vec<u8>>) -> u128 {
+    let mut name: [u128; 1] = [0];
+    let name_ref: &mut [u8] = bytemuck::cast_slice_mut(&mut name);
+    file.read(&mut name_ref[0..15]).unwrap();
+    name[0]
+}
+
+fn case_string_from_u128(string_raw: u128) -> String {
+    let k: &[u128; 1] = &[string_raw];
+    let name: &[u8] = bytemuck::cast_slice(k);
+    read_string_raw(&name[0..15])
+}
+
+pub fn read_bezier_control_point_pair4(file: &mut Cursor<Vec<u8>>) -> [f32; 4] {
     let x = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
     let y = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
     let z = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
@@ -45,7 +64,7 @@ pub fn read_bezier_control_point_pair1<T>(file: &mut T) -> [f32; 4]
     [x, y, z, w]
 }
 
-pub fn read_header(mut file: &mut File) -> String {
+pub fn read_header(mut file: &mut Cursor<Vec<u8>>) -> String {
     let header_string = read_string(&mut file, 30);
 
     if header_string.starts_with(VERSION_1) {
@@ -57,8 +76,8 @@ pub fn read_header(mut file: &mut File) -> String {
     }
 }
 
-pub fn read_bone_keyframe(mut file: &mut File) -> (String, BoneKeyframe) {
-    let name = read_string(&mut file, 15);
+pub fn read_bone_keyframe(mut file: &mut Cursor<Vec<u8>>) -> (u128, BoneKeyframe) {
+    let name = read_string_as_u128(file);
     let keyframe = BoneKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         trans: read_float3(&mut file),
@@ -71,7 +90,7 @@ pub fn read_bone_keyframe(mut file: &mut File) -> (String, BoneKeyframe) {
     (name, keyframe)
 }
 
-pub fn read_camera_keyframe(mut file: &mut File) -> CameraKeyframe {
+pub fn read_camera_keyframe(mut file: &mut Cursor<Vec<u8>>) -> CameraKeyframe {
     CameraKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         dist: file.read_f32::<LittleEndian>().unwrap(),
@@ -88,7 +107,7 @@ pub fn read_camera_keyframe(mut file: &mut File) -> CameraKeyframe {
     }
 }
 
-pub fn read_morph_keyframe(mut file: &mut File) -> (String, MorphKeyframe) {
+pub fn read_morph_keyframe(mut file: &mut Cursor<Vec<u8>>) -> (String, MorphKeyframe) {
     let name = read_string(&mut file, 15);
     let keyframe =  MorphKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
@@ -97,7 +116,7 @@ pub fn read_morph_keyframe(mut file: &mut File) -> (String, MorphKeyframe) {
     (name, keyframe)
 }
 
-pub fn read_light_keyframe(file: &mut File) -> LightKeyframe {
+pub fn read_light_keyframe(file: &mut Cursor<Vec<u8>>) -> LightKeyframe {
     LightKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         color: read_float3(file),
@@ -105,7 +124,7 @@ pub fn read_light_keyframe(file: &mut File) -> LightKeyframe {
     }
 }
 
-pub fn read_shadow_keyframe(file: &mut File) -> ShadowKeyframe {
+pub fn read_shadow_keyframe(file: &mut Cursor<Vec<u8>>) -> ShadowKeyframe {
     ShadowKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         mode:  file.read_u8().unwrap(),
@@ -113,7 +132,7 @@ pub fn read_shadow_keyframe(file: &mut File) -> ShadowKeyframe {
     }
 }
 
-pub fn read_ik_keyframe(file: &mut File) -> IkKeyframe {
+pub fn read_ik_keyframe(file: &mut Cursor<Vec<u8>>) -> IkKeyframe {
     let frame = file.read_u32::<LittleEndian>().unwrap();
     let show = file.read_u8().unwrap() == 0;
     let count = file.read_u32::<LittleEndian>().unwrap() as usize;
@@ -134,14 +153,22 @@ pub fn read_ik_keyframe(file: &mut File) -> IkKeyframe {
 
 impl Motion {
     pub fn read_vmd(path: &Path) -> Motion {
-        let mut file = File::open(path).unwrap();
+        let content = std::fs::read(path).unwrap();
+        let mut file = std::io::Cursor::new(content);
+
         let model_name = read_header(&mut file);
         let mut bone_keyframes: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
         {
             let bone_keyframe_list = read_items(&mut file, read_bone_keyframe);
+            let mut bone_keyframes_inner: BTreeMap<u128, Vec<BoneKeyframe>> = BTreeMap::new();
+
             for (name, kf) in &bone_keyframe_list {
-                bone_keyframes.entry(name.clone()).or_insert(vec![]);
-                bone_keyframes.get_mut(name).unwrap().push(kf.clone());
+                bone_keyframes_inner.entry(name.clone()).or_insert(vec![]);
+                bone_keyframes_inner.get_mut(name).unwrap().push(kf.clone());
+            }
+            for (string_raw, value) in bone_keyframes_inner {
+                let name = case_string_from_u128(string_raw);
+                bone_keyframes.insert(name, value);
             }
         }
         let mut morph_keyframes: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();

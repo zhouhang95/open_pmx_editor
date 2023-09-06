@@ -1,5 +1,9 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{Read, Write};
+use std::io::{Read, Write, Cursor};
 
 pub fn read_float3<T>(file: &mut T) -> [f32; 3]
     where T: Read {
@@ -31,8 +35,8 @@ pub fn write_float4<T>(file: &mut T, [x, y, z, w]: [f32; 4])
     file.write_f32::<LittleEndian>(w).unwrap();
 }
 
-pub fn read_items<R, T, F>(file: &mut R, f: F) -> Vec<T>
-    where R: Read, F: Fn(&mut R) -> T {
+pub fn read_items<T, F>(file: &mut Cursor<Vec<u8>>, f: F) -> Vec<T>
+    where F: Fn(&mut Cursor<Vec<u8>>) -> T {
     match file.read_u32::<LittleEndian>() {
         Ok(count) => {
             let mut items: Vec<T> = Vec::with_capacity(count as usize);
@@ -45,8 +49,8 @@ pub fn read_items<R, T, F>(file: &mut R, f: F) -> Vec<T>
     }
 }
 
-pub fn read_fix_items<R, T, F>(file: &mut R, count: usize, f: F) -> Vec<T>
-    where R: Read, F: Fn(&mut R) -> T {
+pub fn read_fix_items<T, F>(file: &mut Cursor<Vec<u8>>, count: usize, f: F) -> Vec<T>
+    where F: Fn(&mut Cursor<Vec<u8>>) -> T {
     let mut items: Vec<T> = Vec::with_capacity(count);
     for _ in 0..count {
         items.push(f(file));
@@ -60,4 +64,14 @@ pub fn write_items<W, T, F>(mut file: &mut W, content: &Vec<T>, f: F)
     for i in 0..count {
         f(&mut file, &content[i]);
     }
+}
+
+pub fn benchmark<F, T>(func: F) -> T
+    where F: FnOnce() -> T
+{
+    let s = std::time::Instant::now();
+    let r = func();
+    let d = s.elapsed();
+    println!("{}ms", d.as_millis());
+    r
 }

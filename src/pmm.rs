@@ -51,6 +51,8 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
     let name = read_v_string(&mut file);
     let name_en = read_v_string(&mut file);
     let path = read_string(&mut file, 256);
+    let content = std::fs::read(path).unwrap();
+    let mut file = std::io::Cursor::new(content);
     let keyframe_editor_top_level_rows = file.read_u8().unwrap();
     let bone_names = read_items(&mut file, read_v_string);
     let morph_names = read_items(&mut file, read_v_string);
@@ -182,9 +184,8 @@ pub fn read_model<T>(mut file: &mut T) -> Motion
     }.clear_empty_keyframe()
 }
 
-pub fn read_bone_frame<T>(mut file: &mut T,
-                       keyframes: &mut BTreeMap<u32, (usize, BoneKeyframe)>, names: &Vec<String>)
-    where T: Read {
+pub fn read_bone_frame(mut file: &mut Cursor<Vec<u8>>,
+                       keyframes: &mut BTreeMap<u32, (usize, BoneKeyframe)>, names: &Vec<String>) {
     let data_index = if keyframes.len() < names.len() {
         keyframes.len() as u32
     } else {
@@ -243,8 +244,7 @@ pub fn read_morph_frame<T>(file: &mut T,
         weight,
     }));
 }
-pub fn read_op_frame<T>(mut file: &mut T, ik_count: usize, op_count: usize, inited: bool)
-    where T: Read {
+pub fn read_op_frame(mut file: &mut Cursor<Vec<u8>>, ik_count: usize, op_count: usize, inited: bool) {
     let data_index = if inited { -1 } else { file.read_i32::<LittleEndian>().unwrap() };
     let frame = file.read_u32::<LittleEndian>().unwrap();
     let pre_index = file.read_u32::<LittleEndian>().unwrap();
@@ -320,8 +320,7 @@ pub fn read_camera_keyframe<T>(mut file: &mut T, init: bool) -> CameraKeyframe
     }
 }
 
-fn read_camera_motion<T>(file: &mut T) -> Motion 
-    where T: Read {
+fn read_camera_motion(file: &mut Cursor<Vec<u8>>) -> Motion {
     let mut camera_keyframes = vec![];
     camera_keyframes.push(read_camera_keyframe(file, true));
     camera_keyframes.extend(read_items(

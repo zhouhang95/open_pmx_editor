@@ -14,8 +14,9 @@ eframe = { version = "0.22.0", default-features = false, features = [
 ] }
 log = "0.4"
 rfd = "0.11"
-encoding="*"
-byteorder="*"
+bytemuck = "1.14"
+encoding = "0.2"
+byteorder = "1.4"
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
