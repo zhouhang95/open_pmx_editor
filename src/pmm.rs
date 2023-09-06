@@ -46,14 +46,11 @@ pub fn read_header<T>(mut file: &mut T)
     let self_shadow_panel = file.read_u8().unwrap() == 1 ;
     let selected_model_index = file.read_u8().unwrap();
 }
-pub fn read_model<T>(mut file: &mut T) -> Motion
-    where T: Read {
+pub fn read_model(mut file: &mut Cursor<Vec<u8>>) -> Motion {
     let number = file.read_u8().unwrap();
     let name = read_v_string(&mut file);
     let name_en = read_v_string(&mut file);
     let path = read_string(&mut file, 256);
-    let content = std::fs::read(path).unwrap();
-    let mut file = std::io::Cursor::new(content);
     let keyframe_editor_top_level_rows = file.read_u8().unwrap();
     let bone_names = read_items(&mut file, read_v_string);
     let morph_names = read_items(&mut file, read_v_string);
