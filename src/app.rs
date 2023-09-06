@@ -275,7 +275,7 @@ impl eframe::App for TemplateApp {
                             });
                             row.col(|ui| {
                                 let rot = bone_cur_keyframe[row_index].rot;
-                                ui.label(format!("{}, {}, {}, {}", rot[0], rot[1], rot[2], rot[3]));
+                                ui.label(format!("{}, {}, {}, {}", rot.x, rot.y, rot.z, rot.w));
                             });
                         });
                     });

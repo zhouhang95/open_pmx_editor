@@ -13,9 +13,10 @@ use encoding::all::WINDOWS_31J;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{SeekFrom, Cursor};
 use crate::vmd_reader::{read_string, read_bezier_control_point_pair1};
-use crate::common::{read_items, read_fix_items, read_float3, read_float4};
+use crate::common::{read_items, read_fix_items, read_float3, read_float4, read_quat};
 use crate::motion::*;
 use std::collections::BTreeMap;
+use glam::*;
 
 const PMM_HEADER: &str = "Polygon Movie maker 0002";
 
@@ -207,7 +208,7 @@ pub fn read_bone_frame(mut file: &mut Cursor<Vec<u8>>,
         file.read_u8().unwrap() as f32 / 127f32
     });
     let trans = read_float3(&mut file);
-    let rot = read_float4(&mut file);
+    let rot = read_quat(&mut file);
     let selected = file.read_u8().unwrap() == 1;
     let physics_disabled = file.read_u8().unwrap() == 1;
 
@@ -216,10 +217,10 @@ pub fn read_bone_frame(mut file: &mut Cursor<Vec<u8>>,
         frame,
         trans,
         rot,
-        txc: [txc[0], txc[1], txc[2], txc[3]],
-        tyc: [tyc[0], tyc[1], tyc[2], tyc[3]],
-        tzc: [tzc[0], tzc[1], tzc[2], tzc[3]],
-        rc:  [rc[0], rc[1], rc[2], rc[3]],
+        txc: vec4(txc[0], txc[1], txc[2], txc[3]),
+        tyc: vec4(tyc[0], tyc[1], tyc[2], tyc[3]),
+        tzc: vec4(tzc[0], tzc[1], tzc[2], tzc[3]),
+        rc:  vec4(rc[0], rc[1], rc[2], rc[3]),
     }));
 }
 

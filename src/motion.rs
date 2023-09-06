@@ -3,7 +3,7 @@
 #![allow(unused_variables)]
 
 use std::collections::BTreeMap;
-
+use glam::*;
 pub struct Motion {
     pub model_name:       String,
     pub bone_keyframes:   BTreeMap<String, Vec<BoneKeyframe>>,
@@ -17,20 +17,20 @@ pub struct Motion {
 #[derive(Clone, Copy)]
 pub struct BoneKeyframe {
     pub frame: u32,
-    pub trans: [f32; 3],
-    pub rot:   [f32; 4],
-    pub txc:   [f32; 4],
-    pub tyc:   [f32; 4],
-    pub tzc:   [f32; 4],
-    pub rc:    [f32; 4],
+    pub trans: Vec3,
+    pub rot:   Quat,
+    pub txc:   Vec4,
+    pub tyc:   Vec4,
+    pub tzc:   Vec4,
+    pub rc:    Vec4,
 }
 
 impl BoneKeyframe {
     fn empty(&self) -> bool {
-        if self.trans != [0.0; 3] {
+        if self.trans != Vec3::ZERO {
             return false;
         }
-        if self.rot != [0.0, 0.0, 0.0, 1.0] {
+        if self.rot != Quat::IDENTITY {
             return false;
         }
         return true;
@@ -47,14 +47,14 @@ pub struct MorphKeyframe {
 pub struct CameraKeyframe {
     pub frame: u32,
     pub dist:  f32,
-    pub trans: [f32; 3],
-    pub rot:   [f32; 3],
-    pub txc:   [f32; 4],
-    pub tyc:   [f32; 4],
-    pub tzc:   [f32; 4],
-    pub rc :   [f32; 4],
-    pub dc :   [f32; 4],
-    pub vc :   [f32; 4],
+    pub trans: Vec3,
+    pub rot:   Vec3,
+    pub txc:   Vec4,
+    pub tyc:   Vec4,
+    pub tzc:   Vec4,
+    pub rc :   Vec4,
+    pub dc :   Vec4,
+    pub vc :   Vec4,
     pub fov:   u32,
     pub perspective: bool,
 }
@@ -63,8 +63,8 @@ pub struct CameraKeyframe {
 #[derive(Copy, Clone)]
 pub struct LightKeyframe {
     pub frame:     u32,
-    pub color:     [f32; 3],
-    pub direction: [f32; 3],
+    pub color:     Vec3,
+    pub direction: Vec3,
 }
 
 #[derive(Copy, Clone)]

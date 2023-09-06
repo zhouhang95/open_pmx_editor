@@ -17,6 +17,7 @@ rfd = "0.11"
 bytemuck = "1.14"
 encoding = "0.2"
 byteorder = "1.4"
+glam = "0.24"
 
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }

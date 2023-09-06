@@ -6,17 +6,18 @@ use crate::motion::{Motion, ShadowKeyframe, LightKeyframe, CameraKeyframe, Morph
 use std::path::Path;
 use crate::vmd_reader::VERSION_2;
 use encoding::{Encoding, DecoderTrap, EncoderTrap};
+use glam::Vec4;
 use std::fs;
 use std::io::Write;
 use byteorder::{WriteBytesExt, LittleEndian};
 use encoding::all::WINDOWS_31J;
-use crate::common::{write_float3, write_float4, write_items};
+use crate::common::{write_float3, write_float4, write_items, write_quat};
 use std::cmp::max;
 use std::collections::HashMap;
 
-pub fn write_bezier_control_point_pair4<T>(file: &mut T, [x, y, z, w]: [f32; 4])
+pub fn write_bezier_control_point_pair4<T>(file: &mut T, vec: Vec4)
     where T: Write {
-    for v in &[x, y, z, w] {
+    for v in &[vec.x, vec.y, vec.z, vec.w] {
         let v = max((v * 127f32) as i8, 0);
         file.write_i8(v).unwrap();
         file.write_i8(v).unwrap();
@@ -25,12 +26,12 @@ pub fn write_bezier_control_point_pair4<T>(file: &mut T, [x, y, z, w]: [f32; 4])
     }
 }
 
-pub fn write_bezier_control_point_pair1<T>(file: &mut T, [x, y, z, w]: [f32; 4])
+pub fn write_bezier_control_point_pair1<T>(file: &mut T, v: Vec4)
     where T: Write {
-    file.write_i8(max((x * 127f32) as i8, 0)).unwrap();
-    file.write_i8(max((y * 127f32) as i8, 0)).unwrap();
-    file.write_i8(max((z * 127f32) as i8, 0)).unwrap();
-    file.write_i8(max((w * 127f32) as i8, 0)).unwrap();
+    file.write_i8(max((v.x * 127f32) as i8, 0)).unwrap();
+    file.write_i8(max((v.y * 127f32) as i8, 0)).unwrap();
+    file.write_i8(max((v.z * 127f32) as i8, 0)).unwrap();
+    file.write_i8(max((v.w * 127f32) as i8, 0)).unwrap();
 }
 
 pub fn write_bone_keyframe<T>(mut file: &mut T, name: &String, keyframe: &BoneKeyframe)
@@ -38,7 +39,7 @@ pub fn write_bone_keyframe<T>(mut file: &mut T, name: &String, keyframe: &BoneKe
     write_string(&mut file, name, 15);
     file.write_u32::<LittleEndian>(keyframe.frame).unwrap();
     write_float3(&mut file, keyframe.trans);
-    write_float4(&mut file, keyframe.rot);
+    write_quat(&mut file, keyframe.rot);
     write_bezier_control_point_pair4(&mut file, keyframe.txc);
     write_bezier_control_point_pair4(&mut file, keyframe.tyc);
     write_bezier_control_point_pair4(&mut file, keyframe.tzc);

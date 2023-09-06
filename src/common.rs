@@ -4,35 +4,53 @@
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Read, Write, Cursor};
+use glam::*;
 
-pub fn read_float3<T>(file: &mut T) -> [f32; 3]
+pub fn read_float3<T>(file: &mut T) -> Vec3
     where T: Read {
     let x = file.read_f32::<LittleEndian>().unwrap();
     let y = file.read_f32::<LittleEndian>().unwrap();
     let z = file.read_f32::<LittleEndian>().unwrap();
-    [x, y, z]
+    vec3(x, y, z)
 }
-pub fn write_float3<T>(file: &mut T, [x, y, z]: [f32; 3])
+pub fn write_float3<T>(file: &mut T, v: Vec3)
     where T: Write {
-    file.write_f32::<LittleEndian>(x).unwrap();
-    file.write_f32::<LittleEndian>(y).unwrap();
-    file.write_f32::<LittleEndian>(z).unwrap();
+    file.write_f32::<LittleEndian>(v.x).unwrap();
+    file.write_f32::<LittleEndian>(v.y).unwrap();
+    file.write_f32::<LittleEndian>(v.z).unwrap();
 }
 
-pub fn read_float4<T>(file: &mut T) -> [f32; 4]
+pub fn read_float4<T>(file: &mut T) -> Vec4
     where T: Read {
     let x = file.read_f32::<LittleEndian>().unwrap();
     let y = file.read_f32::<LittleEndian>().unwrap();
     let z = file.read_f32::<LittleEndian>().unwrap();
     let w = file.read_f32::<LittleEndian>().unwrap();
-    [x, y, z, w]
+    vec4(x, y, z, w)
 }
-pub fn write_float4<T>(file: &mut T, [x, y, z, w]: [f32; 4])
+
+pub fn read_quat<T>(file: &mut T) -> Quat
+    where T: Read {
+    let x = file.read_f32::<LittleEndian>().unwrap();
+    let y = file.read_f32::<LittleEndian>().unwrap();
+    let z = file.read_f32::<LittleEndian>().unwrap();
+    let w = file.read_f32::<LittleEndian>().unwrap();
+    quat(x, y, z, w)
+}
+pub fn write_float4<T>(file: &mut T, v: Vec4)
     where T: Write {
-    file.write_f32::<LittleEndian>(x).unwrap();
-    file.write_f32::<LittleEndian>(y).unwrap();
-    file.write_f32::<LittleEndian>(z).unwrap();
-    file.write_f32::<LittleEndian>(w).unwrap();
+    file.write_f32::<LittleEndian>(v.x).unwrap();
+    file.write_f32::<LittleEndian>(v.y).unwrap();
+    file.write_f32::<LittleEndian>(v.z).unwrap();
+    file.write_f32::<LittleEndian>(v.w).unwrap();
+}
+
+pub fn write_quat<T>(file: &mut T, v: Quat)
+    where T: Write {
+    file.write_f32::<LittleEndian>(v.x).unwrap();
+    file.write_f32::<LittleEndian>(v.y).unwrap();
+    file.write_f32::<LittleEndian>(v.z).unwrap();
+    file.write_f32::<LittleEndian>(v.w).unwrap();
 }
 
 pub fn read_items<T, F>(file: &mut Cursor<Vec<u8>>, f: F) -> Vec<T>

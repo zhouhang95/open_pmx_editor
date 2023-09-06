@@ -12,6 +12,7 @@ use encoding::{Encoding, DecoderTrap};
 use encoding::all::WINDOWS_31J;
 
 use byteorder::{LittleEndian, ReadBytesExt};
+use glam::*;
 use std::io::SeekFrom;
 
 use crate::motion::*;
@@ -47,21 +48,21 @@ fn case_string_from_u128(string_raw: u128) -> String {
     read_string_raw(&name[0..15])
 }
 
-pub fn read_bezier_control_point_pair4(file: &mut Cursor<Vec<u8>>) -> [f32; 4] {
+pub fn read_bezier_control_point_pair4(file: &mut Cursor<Vec<u8>>) -> Vec4 {
     let x = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
     let y = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
     let z = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
     let w = (file.read_u32::<LittleEndian>().unwrap() & 0xFF) as f32 / 127f32;
-    [x, y, z, w]
+    vec4(x, y, z, w)
 }
 
-pub fn read_bezier_control_point_pair1<T>(file: &mut T) -> [f32; 4] 
+pub fn read_bezier_control_point_pair1<T>(file: &mut T) -> Vec4
     where T: Read {
     let x = file.read_u8().unwrap() as f32 / 127f32;
     let y = file.read_u8().unwrap() as f32 / 127f32;
     let z = file.read_u8().unwrap() as f32 / 127f32;
     let w = file.read_u8().unwrap() as f32 / 127f32;
-    [x, y, z, w]
+    vec4(x, y, z, w)
 }
 
 pub fn read_header(mut file: &mut Cursor<Vec<u8>>) -> String {
@@ -81,7 +82,7 @@ pub fn read_bone_keyframe(mut file: &mut Cursor<Vec<u8>>) -> (u128, BoneKeyframe
     let keyframe = BoneKeyframe {
         frame: file.read_u32::<LittleEndian>().unwrap(),
         trans: read_float3(&mut file),
-        rot: read_float4(&mut file),
+        rot: read_quat(&mut file),
         txc: read_bezier_control_point_pair4(&mut file),
         tyc: read_bezier_control_point_pair4(&mut file),
         tzc: read_bezier_control_point_pair4(&mut file),
