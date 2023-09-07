@@ -1,10 +1,10 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::ffi::OsStr;
+use std::{ffi::OsStr, collections::BTreeMap};
 
 use egui::{TextStyle, ScrollArea};
 use egui_extras::{Column, TableBuilder};
 
-use crate::{motion::Motion, pmm::read_pmm, pmx::Pmx};
+use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}};
 
 #[derive(PartialEq)]
 enum Page {
@@ -109,6 +109,35 @@ impl eframe::App for TemplateApp {
                             } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
                                 let content = std::fs::read(p).unwrap();
                                 self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Japanese to Engligh").clicked() {
+                        if let Some(m) = &mut self.pmx_data {
+                            for b in &mut m.bones {
+                                b.name = bone_jap_to_eng(&b.name);
+                            }
+                            for morph in &mut m.morphs {
+                                morph.name = morph_jap_to_eng(&morph.name);
+                            }
+                        }
+                        if let Some(m) = &mut self.vmd_motion {
+                            {
+                                let mut new_bone_keyframes: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
+                                for (k, v) in &m.bone_keyframes {
+                                    let name = bone_jap_to_eng(&k);
+                                    new_bone_keyframes.insert(name, v.clone());
+                                }
+                                m.bone_keyframes = new_bone_keyframes;
+                            }
+                            {
+                                let mut new_morph_keyframes: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();
+                                for (k, v) in &m.morph_keyframes {
+                                    let name = morph_jap_to_eng(&k);
+                                    new_morph_keyframes.insert(name, v.clone());
+                                }
+                                m.morph_keyframes = new_morph_keyframes;
                             }
                         }
                         ui.close_menu();
