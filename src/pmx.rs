@@ -99,10 +99,32 @@ pub struct Mat {
     pub comment: String,
     pub associated_face_count: u32,
 }
+impl Default for Mat {
+    fn default() -> Self {
+        Self {
+            name: "Mat".to_string(),
+            name_en: "Mat".to_string(),
+            diffuse: vec4(0.4, 0.4, 0.4, 1.0),
+            specular: Vec3::splat(0.4),
+            specular_strength: 5.0, 
+            ambient: Vec3::splat(0.2),
+            draw_flag: DrawFlags::NO_CULL,
+            edge_color: vec4(0.0, 0.0, 0.0, 1.0), 
+            edge_scale: 1.0,
+            tex_index: -1,
+            env_index: -1,
+            env_blend_mode: BlendMode::Mul,
+            toon: Toon::Tex(-1),
+            comment: Default::default(),
+            associated_face_count: 0,
+        }
+    }
+}
+
 
 bitflags! {
     pub struct BoneFlags: u16 {
-        const INDEXED_TAIL_POS     = 0b0000000000000001;
+        const INDEXED_TAIL_BONE     = 0b0000000000000001;
         const ROTATABLE            = 0b0000000000000010;
         const TRANSLATABLE         = 0b0000000000000100;
         const VISIBLE              = 0b0000000000001000;
@@ -136,6 +158,24 @@ pub struct Bone {
     pub fixed_axis: Option<Vec3>,
     pub local_axis: Option<(Vec3, Vec3)>,
     pub external_parent: Option<i32>,
+}
+
+impl Default for Bone {
+    fn default() -> Self {
+        Self {
+            name: "センター".to_string(),
+            name_en: "center".to_string(),
+            pos: Default::default(),
+            parent_index: Default::default(),
+            layer: Default::default(),
+            bone_flags: BoneFlags::empty(),
+            bone_tail_pos: BoneTailPos::Pos(Vec3::ZERO),
+            inherit: Default::default(),
+            fixed_axis: Default::default(),
+            local_axis: Default::default(),
+            external_parent: Default::default(),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -442,7 +482,7 @@ impl Pmx {
             };
             let layer = file.read_i32::<LE>().unwrap();
             let bone_flags = BoneFlags::from_bits(file.read_u16::<LE>().unwrap()).unwrap();
-            let bone_tail_pos = if bone_flags.contains(BoneFlags::INDEXED_TAIL_POS) {
+            let bone_tail_pos = if bone_flags.contains(BoneFlags::INDEXED_TAIL_BONE) {
                 BoneTailPos::Bone(Pmx::read_int(file, bone_index_size))
             } else {
                 BoneTailPos::Pos(read_float3(file))

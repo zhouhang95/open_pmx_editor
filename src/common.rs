@@ -65,6 +65,14 @@ pub fn write_quat<T>(file: &mut T, v: Quat)
     file.write_f32::<LittleEndian>(v.w).unwrap();
 }
 
+pub fn write_int4<T>(file: &mut T, v: IVec4)
+    where T: Write {
+    file.write_i32::<LittleEndian>(v.x).unwrap();
+    file.write_i32::<LittleEndian>(v.y).unwrap();
+    file.write_i32::<LittleEndian>(v.z).unwrap();
+    file.write_i32::<LittleEndian>(v.w).unwrap();
+}
+
 pub fn read_items<T, F>(file: &mut Cursor<Vec<u8>>, f: F) -> Vec<T>
     where F: Fn(&mut Cursor<Vec<u8>>) -> T {
     match file.read_u32::<LittleEndian>() {

@@ -148,6 +148,8 @@ impl eframe::App for TemplateApp {
                                 .add_filter("Poygon Mesh data eXtension", &["pmx"])
                                 .save_file();
                             if let Some(p) = &path {
+                                let contents = m.write();
+                                std::fs::write(p, contents).unwrap();
                             }
                         }
                         ui.close_menu();
