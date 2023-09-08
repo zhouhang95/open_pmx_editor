@@ -265,6 +265,7 @@ pub struct MorphInfo {
     pub name_en: String,
     pub panel: i8,
     pub category: i8,
+    pub data: Morph,
 }
 
 #[derive(Clone)]
@@ -300,7 +301,7 @@ pub struct MorphVertexItem {
 pub struct MorphBoneItem {
     pub index: u32,
     pub trans: Vec3,
-    pub rot: Vec4,
+    pub rot: Quat,
 }
 
 #[derive(Copy, Clone)]
@@ -696,12 +697,6 @@ impl Pmx {
             let panel = file.read_i8().unwrap();
             let category = file.read_i8().unwrap();
             let count = file.read_i32::<LE>().unwrap();
-            vct.push(MorphInfo{
-                name,
-                name_en,
-                panel,
-                category,
-            });
             if category == 0 {
                 let mut v = Vec::new();
                 for __ in 0..count {
@@ -712,7 +707,13 @@ impl Pmx {
                         affect,
                     });
                 }
-                // vct.push(Morph::MorphGroup(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphGroup(v),
+                });
             } else if category == 1 {
                 let mut v = Vec::new();
                 for __ in 0..count {
@@ -723,20 +724,32 @@ impl Pmx {
                         trans,
                     });
                 }
-                // vct.push(Morph::MorphVertex(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphVertex(v),
+                });
             } else if category == 2 {
                 let mut v = Vec::new();
                 for __ in 0..count {
                     let index = Pmx::read_int(file, bone_index_size) as u32;
                     let trans = read_float3(file);
-                    let rot = read_float4(file);
+                    let rot = read_quat(file);
                     v.push(MorphBoneItem {
                         index,
                         trans,
                         rot,
                     })
                 }
-                // vct.push(Morph::MorphBone(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphBone(v),
+                });
             } else if category == 3 {
                 let mut v = Vec::new();
                 for __ in 0..count {
@@ -747,7 +760,13 @@ impl Pmx {
                         trans,
                     })
                 }
-                // vct.push(Morph::MorphUv(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphUv(v),
+                });
             } else if category == 4 || category == 5 || category == 6 || category == 7 {
                 unreachable!()
             } else if category == 8 {
@@ -782,7 +801,13 @@ impl Pmx {
                         toon_tint,
                     });
                 }
-                // vct.push(Morph::MorphMat(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphMat(v),
+                });
             } else if category == 9 {
                 let mut v = Vec::new();
                 for __ in 0..count {
@@ -793,7 +818,13 @@ impl Pmx {
                         affect,
                     })
                 }
-                // vct.push(Morph::MorphFlip(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphFlip(v),
+                });
             } else if category == 10 {
                 let mut v = Vec::new();
                 for __ in 0..count {
@@ -808,7 +839,13 @@ impl Pmx {
                         rot_torque,
                     });
                 }
-                // vct.push(Morph::MorphRigidbody(v));
+                vct.push(MorphInfo {
+                    name,
+                    name_en,
+                    panel,
+                    category,
+                    data: Morph::MorphRigidbody(v),
+                });
             }
         }
         vct

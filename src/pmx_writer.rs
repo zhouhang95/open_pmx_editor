@@ -44,7 +44,7 @@ impl Pmx {
         file.write_u32::<LE>(0).unwrap(); // tex
         self.write_mats(&mut file);
         self.write_bones(&mut file);
-        file.write_u32::<LE>(0).unwrap(); // morphs
+        self.write_morphs(&mut file);
 
 
         self.write_display_frames(&mut file);
@@ -102,6 +102,88 @@ impl Pmx {
             file.write_u32::<LE>(f[0]).unwrap();
             file.write_u32::<LE>(f[1]).unwrap();
             file.write_u32::<LE>(f[2]).unwrap();
+        }
+    }
+
+    fn write_morphs(&self, file: &mut Cursor<Vec<u8>>)  {
+        file.write_u32::<LE>(self.morphs.len() as _).unwrap();
+        for morph in &self.morphs {
+            Self::write_string(file, &morph.name);
+            Self::write_string(file, &morph.name_en);
+            file.write_i8(morph.panel).unwrap();
+            file.write_i8(morph.category).unwrap();
+            match &morph.data {
+                Morph::MorphGroup(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        file.write_f32::<LE>(v.affect).unwrap();
+                    }
+                },
+                Morph::MorphFlip(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        file.write_f32::<LE>(v.affect).unwrap();
+                    }
+                },
+                Morph::MorphVertex(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        write_float3(file, v.trans);
+                    }
+                },
+                Morph::MorphBone(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        write_float3(file, v.trans);
+                        write_quat(file, v.rot);
+                    }
+                },
+                Morph::MorphUv(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        write_float4(file, v.trans);
+                    }
+                },
+                Morph::MorphRigidbody(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        file.write_i8(if v.local { 1 } else {0}).unwrap();
+                        write_float3(file, v.trans_speed);
+                        write_float3(file, v.rot_torque);
+                    }
+                },
+                Morph::MorphMat(vs) => {
+                    file.write_u32::<LE>(vs.len() as _).unwrap();
+                    for v in vs {
+                        file.write_u32::<LE>(v.index).unwrap();
+                        match v.blend_mode {
+                            BlendMode::Mul => {
+                                file.write_u8(0).unwrap();
+                            },
+                            BlendMode::Add => {
+                                file.write_u8(1).unwrap();
+                            },
+                            BlendMode::Disable => todo!(),
+                            BlendMode::Other => todo!(),
+                        }
+                        write_float4(file, v.diffuse);
+                        write_float3(file, v.specular);
+                        file.write_f32::<LE>(v.specularity).unwrap();
+                        write_float3(file, v.ambient);
+                        write_float4(file, v.edge_color);
+                        file.write_f32::<LE>(v.edge_size).unwrap();
+                        write_float4(file, v.texture_tint);
+                        write_float4(file, v.environment_tint);
+                        write_float4(file, v.toon_tint);
+                    }
+                },
+            }
         }
     }
 
