@@ -29,6 +29,8 @@ pub struct TemplateApp {
     bone_cur_value: usize,
     morph_cur_value: usize,
     log_text: String,
+    info_text: String,
+    info_window_open: bool,
 }
 
 impl Default for TemplateApp {
@@ -38,6 +40,8 @@ impl Default for TemplateApp {
             bone_cur_value: 0,
             morph_cur_value: 0,
             log_text: String::new(),
+            info_text: String::new(),
+            info_window_open: false,
             page: Page::VmdBone,
             pmx_data: None,
             pmx_bone_cur_value: 0,
@@ -183,6 +187,27 @@ impl eframe::App for TemplateApp {
                                 buf += &new_m.summary();
                             }
                             self.log_text += &buf;
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Check missing bones and morphs").clicked() {
+                        if let Some(pd) = &self.pmx_data {
+                            if let Some(vm) = &self.vmd_motion {
+                                let missing_bones = pd.check_missing_bones(&vm.get_useful_bone_names());
+                                let missing_morphs = pd.check_missing_morphs(&vm.get_useful_morph_names());
+
+                                let mut info = String::new();
+                                info += "Missing Bones:\n";
+                                for n in &missing_bones {
+                                    info += &format!("{}\n", n);
+                                }
+                                info += "\nMissing Morphs:\n";
+                                for n in &missing_morphs {
+                                    info += &format!("{}\n", n);
+                                }
+                                self.info_text = info;
+                                self.info_window_open = true;
+                            }
                         }
                         ui.close_menu();
                     }
@@ -464,12 +489,13 @@ impl eframe::App for TemplateApp {
             _ => {},
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
+        {
+            let window = egui::Window::new("Info")
+                                            .scroll2([false, true])
+                                            .collapsible(false)
+                                            .open(&mut self.info_window_open)
+                                            .show(ctx, |ui| {
+                ui.text_edit_multiline(&mut self.info_text);
             });
         }
     }

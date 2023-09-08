@@ -1019,30 +1019,30 @@ impl Pmx {
             ik.ik_joints.reverse();
         }
     }
-    pub fn check_missing_bones(&self, motion: &Motion) -> HashMap<String, usize> {
-        let mut bone_names: HashSet<String> = HashSet::new();
+    pub fn check_missing_bones(&self, vmd_bone_names: &BTreeSet<String>) -> BTreeSet<String> {
+        let mut bone_names: BTreeSet<String> = BTreeSet::new();
         for b in &self.bones {
             bone_names.insert(b.name.clone());
         }
 
-        let mut res = HashMap::new();
-        for n in motion.bone_keyframes.keys() {
+        let mut res = BTreeSet::new();
+        for n in vmd_bone_names {
             if !bone_names.contains(n) {
-                res.insert(n.clone(), motion.bone_keyframes.get(n).unwrap().len());
+                res.insert(n.clone());
             }
         }
         res
     }
-    pub fn check_missing_morphs(&self, motion: &Motion) -> HashMap<String, usize> {
-        let mut morph_names: HashSet<String> = HashSet::new();
+    pub fn check_missing_morphs(&self, vmd_morph_names: &BTreeSet<String>) -> BTreeSet<String> {
+        let mut morph_names: BTreeSet<String> = BTreeSet::new();
         for m in &self.morphs {
             morph_names.insert(m.name.clone());
         }
 
-        let mut res = HashMap::new();
-        for n in motion.morph_keyframes.keys() {
+        let mut res = BTreeSet::new();
+        for n in vmd_morph_names {
             if !morph_names.contains(n) {
-                res.insert(n.clone(), motion.morph_keyframes.get(n).unwrap().len());
+                res.insert(n.clone());
             }
         }
         res

@@ -3,6 +3,7 @@
 #![allow(unused_variables)]
 
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use glam::*;
 pub struct Motion {
     pub model_name:       String,
@@ -98,15 +99,9 @@ impl Motion {
 
     pub fn clear_empty_morph(&self) -> BTreeMap<String, Vec<MorphKeyframe>> {
         let mut keyframes: BTreeMap<String, Vec<MorphKeyframe>> = BTreeMap::new();
+        let useful_names = self.get_useful_morph_names();
         for (k, v) in &self.morph_keyframes {
-            let mut not_zero = false;
-            for kf in v {
-                if kf.weight != 0.0 {
-                    not_zero = true;
-                    break;
-                }
-            }
-            if not_zero {
+            if useful_names.contains(k) {
                 if v.len() >= 3 {
                     let mut need_remove = Vec::new();
                     for i in 1..(v.len()-1) {
@@ -131,15 +126,9 @@ impl Motion {
 
     pub fn clear_empty_bone(&self) -> BTreeMap<String, Vec<BoneKeyframe>> {
         let mut keyframes: BTreeMap<String, Vec<BoneKeyframe>> = BTreeMap::new();
+        let useful_names = self.get_useful_bone_names();
         for (k, v) in &self.bone_keyframes {
-            let mut not_zero = false;
-            for kf in v {
-                if !kf.empty() {
-                    not_zero = true;
-                    break;
-                }
-            }
-            if not_zero {
+            if useful_names.contains(k) {
                 keyframes.insert(k.clone(), v.clone());
             }
         }
@@ -160,6 +149,40 @@ impl Motion {
             ik_keyframes: self.ik_keyframes.clone(),
             path: self.path.clone(),
         }
+    }
+
+    pub fn get_useful_bone_names(&self) -> BTreeSet<String> {
+        let mut useful_names = BTreeSet::new();
+        for (k, v) in &self.bone_keyframes {
+            let mut not_zero = false;
+            for kf in v {
+                if !kf.empty() {
+                    not_zero = true;
+                    break;
+                }
+            }
+            if not_zero {
+                useful_names.insert(k.clone());
+            }
+        }
+        return useful_names;
+    }
+
+    pub fn get_useful_morph_names(&self) -> BTreeSet<String> {
+        let mut useful_names = BTreeSet::new();
+        for (k, v) in &self.morph_keyframes {
+            let mut not_zero = false;
+            for kf in v {
+                if kf.weight != 0.0 {
+                    not_zero = true;
+                    break;
+                }
+            }
+            if not_zero {
+                useful_names.insert(k.clone());
+            }
+        }
+        return useful_names;
     }
 
     pub fn summary(&self) -> String {
