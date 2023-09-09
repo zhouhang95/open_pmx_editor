@@ -2,7 +2,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use crate::motion::{Motion, ShadowKeyframe, LightKeyframe, CameraKeyframe, MorphKeyframe, BoneKeyframe};
+use crate::motion::{Motion, ShadowKeyframe, LightKeyframe, CameraKeyframe, MorphKeyframe, BoneKeyframe, IkKeyframe};
 use std::path::Path;
 use crate::vmd_reader::VERSION_2;
 use encoding::{Encoding, DecoderTrap, EncoderTrap};
@@ -124,6 +124,17 @@ pub fn write_shadow_keyframe<T>(file: &mut T, keyframe: &ShadowKeyframe)
     file.write_f32::<LittleEndian>(keyframe.dist).unwrap();
 }
 
+pub fn write_ik_keyframe<T>(file: &mut T, keyframe: &IkKeyframe)
+    where T: Write {
+    file.write_u32::<LittleEndian>(keyframe.frame).unwrap();
+    file.write_u8(if keyframe.show {0} else {1}).unwrap();
+    file.write_u32::<LittleEndian>(keyframe.infos.len() as _).unwrap();
+    for (name, enable) in &keyframe.infos {
+        write_string(file, name, 20);
+        file.write_u8(if *enable {1} else {0}).unwrap();
+    }
+}
+
 impl Motion {
     pub fn write_vmd(&self, path: &str) {
         let mut file = vec![];
@@ -156,6 +167,7 @@ impl Motion {
         write_items(&mut file, &self.camera_keyframes, write_camera_keyframe);
         write_items(&mut file, &self.light_keyframes, write_light_keyframe);
         write_items(&mut file, &self.shadow_keyframes, write_shadow_keyframe);
+        write_items(&mut file, &self.ik_keyframes, write_ik_keyframe);
         fs::write(path, file).unwrap();
     }
 }
