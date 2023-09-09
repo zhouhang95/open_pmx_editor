@@ -41,7 +41,7 @@ impl Pmx {
         
         self.write_verts(&mut file);
         self.write_faces(&mut file);
-        file.write_u32::<LE>(0).unwrap(); // tex
+        self.write_texs(&mut file);
         self.write_mats(&mut file);
         self.write_bones(&mut file);
         self.write_morphs(&mut file);
@@ -52,6 +52,13 @@ impl Pmx {
         file.write_u32::<LE>(0).unwrap(); // joints
 
         file.into_inner()
+    }
+
+    fn write_texs(&self, file: &mut Cursor<Vec<u8>>) {
+        file.write_u32::<LE>(self.texs.len() as _).unwrap();
+        for tex in &self.texs {
+            Self::write_string(file, tex);
+        }
     }
 
     fn write_verts(&self, file: &mut Cursor<Vec<u8>>) {
