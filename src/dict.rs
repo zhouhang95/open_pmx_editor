@@ -12,6 +12,8 @@ static MORPH_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("ウィンク２右", "blink_r"),
         ("ｳｨﾝｸ２右", "blink_r"),
         ("なごみ", "blink_2"),
+        ("なごみ左", "blink_2_l"),
+        ("なごみ右", "blink_2_r"),
         ("はぅ", ">_<"),
         ("＞＜", ">_<"),
         ("びっくり", "surprised"),
@@ -46,6 +48,7 @@ static MORPH_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("口横広げ", "<mouth>"),
         ("口角広げ", "<mouth>"),
         ("口角狭め", ">mouth<"),
+        ("口横狭め", ">mouth<"),
         ("歯無し上", "no_up_tooth"),
         ("歯無し下", "no_down_tooth"),
         ("涙", "tear"),
@@ -60,15 +63,34 @@ static MORPH_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("恐ろしい子！", "horrible"),
         ("照れ", "embarrassed"),
         ("赤面", "embarrassed"),
+        ("恥ずかしい", "embarrass"),
+        ("恥ずかしい左", "embarrass_l"),
+        ("恥ずかしい右", "embarrass_r"),
         ("がーん", "bann"),
         ("真面目", "serious"),
+        ("真面目左", "serious_l"),
+        ("真面目右", "serious_r"),
         ("困る", "in_trouble"),
+        ("困る左", "in_trouble_l"),
+        ("困る右", "in_trouble_r"),
         ("にこり", "happy_eyebow"),
+        ("にこり左", "happy_eyebow_l"),
+        ("にこり右", "happy_eyebow_r"),
         ("寄せ", "happy_eyebow"),
         ("怒り", "angry"),
+        ("怒り左", "angry_l"),
+        ("怒り右", "angry_r"),
+        ("怒り目", "angry_eyes"),
+        ("喜び", "happy"),
         ("上", "up"),
         ("下", "down"),
         ("前", "front"),
+        ("上左", "up_l"),
+        ("下左", "down_l"),
+        ("前左", "front_l"),
+        ("上右", "up_r"),
+        ("下右", "down_r"),
+        ("前右", "front_r"),
         ("眉頭左", "eyebow_l"),
         ("眉頭右", "eyebow_r"),
         ("メガネ", "glass"),
@@ -231,6 +253,9 @@ static BONE_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("右肩P", "clavicle_P_r"),
         ("右ダミー", "dummy_r"),
         ("右足IK親", "ik_foot_root_r"),
+
+        ("齿下", "tooth_down"),
+        ("齿上", "tooth_up"),
     ])
 });
 static UTILS_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
@@ -239,8 +264,26 @@ static UTILS_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("１", "_1"),
         ("２", "_2"),
         ("３", "_3"),
-        ("左", "_l_"),
-        ("右", "_r_"),
+        ("下", "Down"),
+        ("上", "Up"),
+        ("先", "Tip"),
+        ("後", "Back"),
+        ("前", "Front"),
+        ("髮", "Hair"),
+        ("胸", "Boob"),
+        ("齿", "Tooth"),
+        ("歯", "Tooth"),
+        ("舌", "Tongue"),
+        ("親", "Parent"),
+        ("補助", "Help"),
+        ("リボン", "Ribbon"),
+        ("両目", "Eyes"),
+        ("带", "Bond"),
+        ("おっぱい", "Breast"),
+        ("調整", "Adjust"),
+        ("足", "Leg"),
+        ("頭", "Head"),
+        ("首", "Neck"),
 
         ("スカート", "skirt"),
     ])
@@ -264,6 +307,12 @@ pub fn bone_jap_to_eng(name: &str) -> String {
         return n.to_string();
     }
     let mut n = name.to_string();
+    if n.contains("左") {
+        n = n.replace("左", "") + "_l";
+    }
+    if n.contains("右") {
+        n = n.replace("右", "") + "_r";
+    }
     UTILS_JP_TO_EN.iter().for_each(|(k, v)| {
         n = n.replace(k, v);
     });
@@ -279,6 +328,12 @@ pub fn morph_jap_to_eng(name: &str) -> String {
         return n.to_string();
     }
     let mut n = name.to_string();
+    if n.contains("左") {
+        n = n.replace("左", "") + "_l";
+    }
+    if n.contains("右") {
+        n = n.replace("右", "") + "_r";
+    }
     UTILS_JP_TO_EN.iter().for_each(|(k, v)| {
         n = n.replace(k, v);
     });
