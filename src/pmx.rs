@@ -32,6 +32,7 @@ pub struct Pmx {
     pub morphs: Vec<MorphInfo>,
     pub rigidbodys: Vec<Rigidbody>,
     pub joints: Vec<Joint>,
+    pub display_frames: Vec<DisplayFrame>,
     pub path: String,
     pub uuid: Uuid,
 }
@@ -391,7 +392,7 @@ impl Pmx {
             morph_index_size,
             rigidbody_index_size
         );
-        Pmx::read_display_frames(file, utf8, bone_index_size, morph_index_size);
+        let display_frames = Pmx::read_display_frames(file, utf8, bone_index_size, morph_index_size);
         let rigidbodys = Pmx::read_rigidbodys(file, utf8, bone_index_size);
         let joints = Pmx::read_joints(file, utf8, rigidbody_index_size);
 
@@ -412,6 +413,7 @@ impl Pmx {
             joints,
             path: path.to_string(),
             uuid: Uuid::new_v4(),
+            display_frames,
         }
 
     }

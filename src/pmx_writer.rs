@@ -276,10 +276,14 @@ impl Pmx {
         }
     }
     fn write_display_frames(&self, file: &mut Cursor<Vec<u8>>) {
-        let display_frames: Vec<DisplayFrame> = vec![
-            DisplayFrame { name: "Root".to_string(), name_en: "Root".to_string(), deletable: true, morph_items: vec![DisplayFrameIndex::Bone(0)] },
-            DisplayFrame { name: "表情".to_string(), name_en: "Exp".to_string(), deletable: true, morph_items: vec![] },
-        ];
+        let display_frames: Vec<DisplayFrame> = if self.display_frames.is_empty() {
+            vec![
+                DisplayFrame { name: "Root".to_string(), name_en: "Root".to_string(), deletable: true, morph_items: vec![DisplayFrameIndex::Bone(0)] },
+                DisplayFrame { name: "表情".to_string(), name_en: "Exp".to_string(), deletable: true, morph_items: vec![] },
+            ]
+        } else {
+            self.display_frames.clone()
+        };
 
         file.write_u32::<LE>(display_frames.len() as _).unwrap();
         for df in &display_frames {
