@@ -247,7 +247,7 @@ impl Pmx {
             &self.bones
         };
         file.write_u32::<LE>(bones.len() as _).unwrap();
-        for b in bones {
+        for (i, b) in bones.iter().enumerate() {
             Self::write_string(file, &b.name);
             Self::write_string(file, &b.name_en);
             write_float3(file, b.pos);
@@ -258,13 +258,7 @@ impl Pmx {
             };
             file.write_i32::<LE>(b.layer).unwrap();
 
-            let mut bitflags = b.bone_flags.bits() & BoneFlags::INDEXED_TAIL_BONE.bits();
-            bitflags |= BoneFlags::ROTATABLE.bits();
-            bitflags |= BoneFlags::TRANSLATABLE.bits();
-            bitflags |= BoneFlags::VISIBLE.bits();
-            bitflags |= BoneFlags::ENABLED.bits();
-
-            file.write_u16::<LE>(bitflags).unwrap();
+            file.write_u16::<LE>(b.bone_flags.bits()).unwrap();
             match b.bone_tail_pos {
                 BoneTailPos::Bone(bi) => {
                     file.write_i32::<LE>(bi).unwrap();
@@ -272,6 +266,39 @@ impl Pmx {
                 BoneTailPos::Pos(pos) => {
                     write_float3(file, pos);
                 },
+            }
+            if let Some((parent_index, affect)) = b.inherit {
+                file.write_i32::<LE>(parent_index).unwrap();
+                file.write_f32::<LE>(affect).unwrap();
+            }
+            if let Some(v) = b.fixed_axis {
+                write_float3(file, v);
+            }
+            if let Some((x, y)) = b.local_axis {
+                write_float3(file, x);
+                write_float3(file, y);
+            }
+            if let Some(external_parent) = b.external_parent {
+                file.write_i32::<LE>(external_parent).unwrap();
+            }
+            for ik in &self.iks {
+                if ik.bone == i as _ {
+                    file.write_i32::<LE>(ik.effector).unwrap();
+                    file.write_i32::<LE>(ik.loop_count).unwrap();
+                    file.write_f32::<LE>(ik.limit_angle).unwrap();
+                    file.write_i32::<LE>(ik.ik_joints.len() as _).unwrap();
+                    for j in &ik.ik_joints {
+                        file.write_i32::<LE>(j.bone).unwrap();
+                        if let Some((limit_min, limit_max)) = j.limit {
+                            file.write_i8(1).unwrap();
+                            write_float3(file, limit_min);
+                            write_float3(file, limit_max);
+                            
+                        } else {
+                            file.write_i8(0).unwrap();
+                        }
+                    }
+                }
             }
         }
     }
