@@ -212,7 +212,7 @@ impl eframe::App for TemplateApp {
                         ui.close_menu();
                     }
                     if ui.button("Quit").clicked() {
-                        _frame.close();
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
 
