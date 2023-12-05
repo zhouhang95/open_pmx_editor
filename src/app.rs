@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf};
+use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use egui::{TextStyle, ScrollArea};
 use egui_extras::{Column, TableBuilder};
@@ -31,6 +31,7 @@ pub struct TemplateApp {
     log_text: String,
     info_text: String,
     info_window_open: bool,
+    show_model_view: Arc<AtomicBool>,
 }
 
 impl Default for TemplateApp {
@@ -46,6 +47,7 @@ impl Default for TemplateApp {
             pmx_data: None,
             pmx_bone_cur_value: 0,
             pmx_morph_cur_value: 0,
+            show_model_view: Arc::new(AtomicBool::new(false)),
         }
     }
 }
@@ -230,6 +232,13 @@ impl eframe::App for TemplateApp {
                     }
                 });
 
+                ui.menu_button("View", |ui| {
+                    let mut show_model_view = self.show_model_view.load(Ordering::Relaxed);
+                    if ui.checkbox(&mut show_model_view, "Show Model View").clicked() {
+                        ui.close_menu();
+                    }
+                    self.show_model_view.store(show_model_view, Ordering::Relaxed);
+                });
                 ui.menu_button("Help", |ui| {
                     if ui.button("Log").clicked() {
                         ui.close_menu();
@@ -249,133 +258,135 @@ impl eframe::App for TemplateApp {
             });
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| match self.page {
-            Page::VmdBone => {
-                let mut bone_names = Vec::new();
-                let mut bone_keyframe_counts = Vec::new();
-                if let Some(m) = &self.vmd_motion {
-                    ui.heading(&m.model_name);
-                    for (bn, kfs) in &m.bone_keyframes {
-                        bone_names.push(bn);
-                        bone_keyframe_counts.push(kfs.len());
+        if self.page != Page::Info {
+            egui::SidePanel::left("side_panel").show(ctx, |ui| match self.page {
+                Page::VmdBone => {
+                    let mut bone_names = Vec::new();
+                    let mut bone_keyframe_counts = Vec::new();
+                    if let Some(m) = &self.vmd_motion {
+                        ui.heading(&m.model_name);
+                        for (bn, kfs) in &m.bone_keyframes {
+                            bone_names.push(bn);
+                            bone_keyframe_counts.push(kfs.len());
+                        }
                     }
-                }
-                ui.horizontal(|ui| {
-                    let text = format!("Count: {}", bone_names.len());
-                    ui.heading(text);
-                });
-                ui.separator();
-                let text_style = TextStyle::Body;
-                let row_height = ui.text_style_height(&text_style);
-                let num_rows = bone_names.len();
-                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
-                    ui,
-                    row_height,
-                    num_rows,
-                    |ui, row_range| {
-                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
-                            for row in row_range {
-                                let text = format!("{:3}: {} ({})", row, bone_names[row], bone_keyframe_counts[row]);
-                                ui.selectable_value(&mut self.bone_cur_value, row, text);
-                            }
-                        });
-                    },
-                );
-            },
-            Page::VmdMorph => {
-                let mut morph_names = Vec::new();
-                let mut morph_keyframe_counts = Vec::new();
-                if let Some(m) = &self.vmd_motion {
-                    ui.heading(&m.model_name);
-                    for (bn, kfs) in &m.morph_keyframes {
-                        morph_names.push(bn);
-                        morph_keyframe_counts.push(kfs.len());
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", bone_names.len());
+                        ui.heading(text);
+                    });
+                    ui.separator();
+                    let text_style = TextStyle::Body;
+                    let row_height = ui.text_style_height(&text_style);
+                    let num_rows = bone_names.len();
+                    ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                        ui,
+                        row_height,
+                        num_rows,
+                        |ui, row_range| {
+                            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                for row in row_range {
+                                    let text = format!("{:3}: {} ({})", row, bone_names[row], bone_keyframe_counts[row]);
+                                    ui.selectable_value(&mut self.bone_cur_value, row, text);
+                                }
+                            });
+                        },
+                    );
+                },
+                Page::VmdMorph => {
+                    let mut morph_names = Vec::new();
+                    let mut morph_keyframe_counts = Vec::new();
+                    if let Some(m) = &self.vmd_motion {
+                        ui.heading(&m.model_name);
+                        for (bn, kfs) in &m.morph_keyframes {
+                            morph_names.push(bn);
+                            morph_keyframe_counts.push(kfs.len());
+                        }
                     }
-                }
-                ui.horizontal(|ui| {
-                    let text = format!("Count: {}", morph_names.len());
-                    ui.heading(text);
-                });
-                ui.separator();
-                let text_style = TextStyle::Body;
-                let row_height = ui.text_style_height(&text_style);
-                let num_rows = morph_names.len();
-                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
-                    ui,
-                    row_height,
-                    num_rows,
-                    |ui, row_range| {
-                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
-                            for row in row_range {
-                                let text = format!("{:3}: {} ({})", row, morph_names[row], morph_keyframe_counts[row]);
-                                ui.selectable_value(&mut self.morph_cur_value, row, text);
-                            }
-                        });
-                    },
-                );
-            },
-            Page::Bone => {
-                let mut names = Vec::new();
-                if let Some(m) = &self.pmx_data {
-                    ui.heading(&m.name);
-                    for b in &m.bones {
-                        names.push(b.name.clone());
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", morph_names.len());
+                        ui.heading(text);
+                    });
+                    ui.separator();
+                    let text_style = TextStyle::Body;
+                    let row_height = ui.text_style_height(&text_style);
+                    let num_rows = morph_names.len();
+                    ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                        ui,
+                        row_height,
+                        num_rows,
+                        |ui, row_range| {
+                            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                for row in row_range {
+                                    let text = format!("{:3}: {} ({})", row, morph_names[row], morph_keyframe_counts[row]);
+                                    ui.selectable_value(&mut self.morph_cur_value, row, text);
+                                }
+                            });
+                        },
+                    );
+                },
+                Page::Bone => {
+                    let mut names = Vec::new();
+                    if let Some(m) = &self.pmx_data {
+                        ui.heading(&m.name);
+                        for b in &m.bones {
+                            names.push(b.name.clone());
+                        }
                     }
-                }
-                ui.horizontal(|ui| {
-                    let text = format!("Count: {}", names.len());
-                    ui.heading(text);
-                });
-                ui.separator();
-                let text_style = TextStyle::Body;
-                let row_height = ui.text_style_height(&text_style);
-                let num_rows = names.len();
-                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
-                    ui,
-                    row_height,
-                    num_rows,
-                    |ui, row_range| {
-                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
-                            for row in row_range {
-                                let text = format!("{:3}: {}", row, names[row]);
-                                ui.selectable_value(&mut self.pmx_bone_cur_value, row, text);
-                            }
-                        });
-                    },
-                );
-            },
-            Page::Morph => {
-                let mut names = Vec::new();
-                if let Some(m) = &self.pmx_data {
-                    ui.heading(&m.name);
-                    for morph in &m.morphs {
-                        names.push(morph.name.clone());
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", names.len());
+                        ui.heading(text);
+                    });
+                    ui.separator();
+                    let text_style = TextStyle::Body;
+                    let row_height = ui.text_style_height(&text_style);
+                    let num_rows = names.len();
+                    ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                        ui,
+                        row_height,
+                        num_rows,
+                        |ui, row_range| {
+                            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                for row in row_range {
+                                    let text = format!("{:3}: {}", row, names[row]);
+                                    ui.selectable_value(&mut self.pmx_bone_cur_value, row, text);
+                                }
+                            });
+                        },
+                    );
+                },
+                Page::Morph => {
+                    let mut names = Vec::new();
+                    if let Some(m) = &self.pmx_data {
+                        ui.heading(&m.name);
+                        for morph in &m.morphs {
+                            names.push(morph.name.clone());
+                        }
                     }
-                }
-                ui.horizontal(|ui| {
-                    let text = format!("Count: {}", names.len());
-                    ui.heading(text);
-                });
-                ui.separator();
-                let text_style = TextStyle::Body;
-                let row_height = ui.text_style_height(&text_style);
-                let num_rows = names.len();
-                ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
-                    ui,
-                    row_height,
-                    num_rows,
-                    |ui, row_range| {
-                        ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {                        
-                            for row in row_range {
-                                let text = format!("{:3}: {}", row, names[row]);
-                                ui.selectable_value(&mut self.pmx_morph_cur_value, row, text);
-                            }
-                        });
-                    },
-                );
-            },
-            _ => {},
-        });
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", names.len());
+                        ui.heading(text);
+                    });
+                    ui.separator();
+                    let text_style = TextStyle::Body;
+                    let row_height = ui.text_style_height(&text_style);
+                    let num_rows = names.len();
+                    ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                        ui,
+                        row_height,
+                        num_rows,
+                        |ui, row_range| {
+                            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                for row in row_range {
+                                    let text = format!("{:3}: {}", row, names[row]);
+                                    ui.selectable_value(&mut self.pmx_morph_cur_value, row, text);
+                                }
+                            });
+                        },
+                    );
+                },
+                _ => {},
+            });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| match self.page {
             Page::Info => {
@@ -511,6 +522,31 @@ impl eframe::App for TemplateApp {
                                             .show(ctx, |ui| {
                 ui.text_edit_multiline(&mut self.info_text);
             });
+        }
+        {
+            if self.show_model_view.load(Ordering::Relaxed) {
+                let show_model_view = self.show_model_view.clone();
+                ctx.show_viewport_deferred(
+                    egui::ViewportId::from_hash_of("show_model_view"),
+                    egui::ViewportBuilder::default()
+                        .with_title("Model View")
+                        .with_inner_size([200.0, 100.0]),
+                    move |ctx, class| {
+                        assert!(
+                            class == egui::ViewportClass::Deferred,
+                            "This egui backend doesn't support multiple viewports"
+                        );
+
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("Hello from deferred viewport");
+                        });
+                        if ctx.input(|i| i.viewport().close_requested()) {
+                            // Tell parent to close us.
+                            show_model_view.store(false, Ordering::Relaxed);
+                        }
+                    },
+                );
+            }
         }
     }
 }
