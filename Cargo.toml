@@ -10,7 +10,7 @@ rust-version = "1.65"
 egui = "0.24.0"
 egui_extras = "0.24.0"
 eframe = { version = "0.24.0", default-features = false, features = [
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
 ] }
 log = "0.4"
 rfd = "0.12"
