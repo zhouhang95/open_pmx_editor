@@ -719,7 +719,7 @@ impl Pmx {
             } else if category == 1 {
                 let mut v = Vec::new();
                 for __ in 0..count {
-                    let index = Pmx::read_int(file, vertex_index_size) as u32;
+                    let index = Pmx::read_uint(file, vertex_index_size) as u32;
                     let trans = read_float3(file);
                     v.push(MorphVertexItem {
                         index,
@@ -755,7 +755,7 @@ impl Pmx {
             } else if category == 3 {
                 let mut v = Vec::new();
                 for __ in 0..count {
-                    let index = Pmx::read_int(file, vertex_index_size) as u32;
+                    let index = Pmx::read_uint(file, vertex_index_size) as u32;
                     let trans = read_float4(file);
                     v.push(MorphUvItem {
                         index,
@@ -857,9 +857,9 @@ impl Pmx {
         let len = file.read_u32::<LE>().unwrap() / 3;
         let mut vct = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            let a = Pmx::read_int(file, vertex_index_size) as u32;
-            let b = Pmx::read_int(file, vertex_index_size) as u32;
-            let c = Pmx::read_int(file, vertex_index_size) as u32;
+            let a = Pmx::read_uint(file, vertex_index_size) as u32;
+            let b = Pmx::read_uint(file, vertex_index_size) as u32;
+            let c = Pmx::read_uint(file, vertex_index_size) as u32;
             vct.push([a, b, c])
         }
         vct
@@ -924,6 +924,15 @@ impl Pmx {
         match index_size {
             1 => file.read_i8().unwrap() as i32,
             2 => file.read_i16::<LE>().unwrap() as i32,
+            4 => file.read_i32::<LE>().unwrap(),
+            _ => unreachable!(),
+        }
+    }
+
+    fn read_uint(file: &mut Cursor<Vec<u8>>, index_size: u8) -> i32 {
+        match index_size {
+            1 => file.read_u8().unwrap() as i32,
+            2 => file.read_u16::<LE>().unwrap() as i32,
             4 => file.read_i32::<LE>().unwrap(),
             _ => unreachable!(),
         }
