@@ -6,7 +6,11 @@
 fn main() -> eframe::Result<()> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_drag_and_drop(true),
+        ..Default::default()
+    };
     eframe::run_native(
         "Open MMD Editor",
         native_options,

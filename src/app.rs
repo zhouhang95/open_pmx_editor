@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{ffi::OsStr, collections::BTreeMap};
+use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf};
 
 use egui::{TextStyle, ScrollArea};
 use egui_extras::{Column, TableBuilder};
@@ -86,12 +86,33 @@ impl TemplateApp {
         setup_custom_fonts(&cc.egui_ctx);
         Default::default()
     }
+    fn load_file(&mut self, p: &PathBuf) {
+        let ext = p.extension();
+        if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
+            let content = std::fs::read(p).unwrap();
+            self.vmd_motion = Some(Motion::read(content, p.to_str().unwrap()));
+            self.page = Page::VmdBone;
+        } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
+            let content = std::fs::read(p).unwrap();
+            self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
+            self.page = Page::Info;
+        }
+    }
 }
 
 impl eframe::App for TemplateApp {
+
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ctx.input(|i| {
+            if i.raw.dropped_files.len() == 1 {
+                let f = i.raw.dropped_files[0].clone();
+                if let Some(p) = &f.path {
+                    self.load_file(p);
+                }
+            }
+        });
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -106,14 +127,7 @@ impl eframe::App for TemplateApp {
                     if ui.button("Open").clicked() {
                         let path = rfd::FileDialog::new().pick_file();
                         if let Some(p) = &path {
-                            let ext = p.extension();
-                            if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
-                                let content = std::fs::read(p).unwrap();
-                                self.vmd_motion = Some(Motion::read(content, p.to_str().unwrap()));
-                            } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
-                                let content = std::fs::read(p).unwrap();
-                                self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
-                            }
+                            self.load_file(p);
                         }
                         ui.close_menu();
                     }
