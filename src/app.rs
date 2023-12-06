@@ -1,10 +1,10 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
-use egui::{TextStyle, ScrollArea};
+use egui::{TextStyle, ScrollArea, mutex::Mutex};
 use egui_extras::{Column, TableBuilder};
 
-use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}, custom3d_wgpu::Custom3d};
+use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}, custom3d_wgpu::{Custom3d, self}};
 
 #[derive(PartialEq)]
 enum Page {
@@ -32,7 +32,7 @@ pub struct TemplateApp {
     info_text: String,
     info_window_open: bool,
     show_model_view: Arc<AtomicBool>,
-    custom3d: Option<Custom3d>,
+    custom3d: Arc<Mutex<Option<Custom3d>>>,
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
@@ -82,7 +82,7 @@ impl TemplateApp {
             pmx_bone_cur_value: 0,
             pmx_morph_cur_value: 0,
             show_model_view: Arc::new(AtomicBool::new(false)),
-            custom3d: Custom3d::new(cc),
+            custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
         }
     }
     fn load_file(&mut self, p: &PathBuf) {
@@ -523,8 +523,8 @@ impl eframe::App for TemplateApp {
         {
             if self.show_model_view.load(Ordering::Relaxed) {
                 let show_model_view = self.show_model_view.clone();
-                // ctx.show_viewport_deferred(
-                ctx.show_viewport_immediate(
+                let custom3d = self.custom3d.clone();
+                ctx.show_viewport_deferred(
                     egui::ViewportId::from_hash_of("show_model_view"),
                     egui::ViewportBuilder::default()
                         .with_title("Model View")
@@ -533,7 +533,7 @@ impl eframe::App for TemplateApp {
                         egui::CentralPanel::default().show(ctx, |ui| {
                             ui.label("Hello from deferred viewport");
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                                if let Some(c3d) = &mut self.custom3d {
+                                if let Some(c3d) = custom3d.lock().as_mut() {
                                     c3d.custom_painting(ui);
                                 }
                             });
