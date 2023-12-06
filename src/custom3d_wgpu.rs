@@ -1,4 +1,4 @@
-use std::num::NonZeroU64;
+use std::{num::NonZeroU64, path::Path};
 
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
@@ -17,9 +17,10 @@ impl Custom3d {
 
         let device = &wgpu_render_state.device;
 
+        let shader_path = Path::new("shader/custom3d_wgpu_shader.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("custom3d"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("./custom3d_wgpu_shader.wgsl").into()),
+            label: Some("Shader"),
+            source: wgpu::ShaderSource::Wgsl(std::fs::read_to_string(shader_path).unwrap().into()),
         });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -169,7 +170,7 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
 impl Custom3d {
     pub fn custom_painting(&mut self, ui: &mut egui::Ui) {
         let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(400.0), egui::Sense::drag());
+            ui.allocate_exact_size(ui.available_size_before_wrap(), egui::Sense::drag());
 
         self.angle += response.drag_delta().x * 0.01;
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
