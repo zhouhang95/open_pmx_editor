@@ -9,4 +9,5 @@ mod vmd_writer;
 mod pmx;
 mod pmx_writer;
 mod dict;
+mod custom3d_wgpu;
 pub use app::TemplateApp;

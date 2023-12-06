@@ -4,7 +4,7 @@ use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{Atom
 use egui::{TextStyle, ScrollArea};
 use egui_extras::{Column, TableBuilder};
 
-use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}};
+use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}, custom3d_wgpu::Custom3d};
 
 #[derive(PartialEq)]
 enum Page {
@@ -32,25 +32,9 @@ pub struct TemplateApp {
     info_text: String,
     info_window_open: bool,
     show_model_view: Arc<AtomicBool>,
+    custom3d: Option<Custom3d>,
 }
 
-impl Default for TemplateApp {
-    fn default() -> Self {
-        Self {
-            vmd_motion: None,
-            bone_cur_value: 0,
-            morph_cur_value: 0,
-            log_text: String::new(),
-            info_text: String::new(),
-            info_window_open: false,
-            page: Page::VmdBone,
-            pmx_data: None,
-            pmx_bone_cur_value: 0,
-            pmx_morph_cur_value: 0,
-            show_model_view: Arc::new(AtomicBool::new(false)),
-        }
-    }
-}
 fn setup_custom_fonts(ctx: &egui::Context) {
     // Start with the default fonts (we will be adding to them rather than replacing them).
     let mut fonts = egui::FontDefinitions::default();
@@ -86,7 +70,20 @@ impl TemplateApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         setup_custom_fonts(&cc.egui_ctx);
-        Default::default()
+        Self {
+            vmd_motion: None,
+            bone_cur_value: 0,
+            morph_cur_value: 0,
+            log_text: String::new(),
+            info_text: String::new(),
+            info_window_open: false,
+            page: Page::VmdBone,
+            pmx_data: None,
+            pmx_bone_cur_value: 0,
+            pmx_morph_cur_value: 0,
+            show_model_view: Arc::new(AtomicBool::new(false)),
+            custom3d: Custom3d::new(cc),
+        }
     }
     fn load_file(&mut self, p: &PathBuf) {
         let ext = p.extension();
@@ -526,19 +523,20 @@ impl eframe::App for TemplateApp {
         {
             if self.show_model_view.load(Ordering::Relaxed) {
                 let show_model_view = self.show_model_view.clone();
-                ctx.show_viewport_deferred(
+                // ctx.show_viewport_deferred(
+                ctx.show_viewport_immediate(
                     egui::ViewportId::from_hash_of("show_model_view"),
                     egui::ViewportBuilder::default()
                         .with_title("Model View")
-                        .with_inner_size([200.0, 100.0]),
+                        .with_inner_size([500.0, 500.0]),
                     move |ctx, class| {
-                        assert!(
-                            class == egui::ViewportClass::Deferred,
-                            "This egui backend doesn't support multiple viewports"
-                        );
-
                         egui::CentralPanel::default().show(ctx, |ui| {
                             ui.label("Hello from deferred viewport");
+                            egui::Frame::canvas(ui.style()).show(ui, |ui| {
+                                if let Some(c3d) = &mut self.custom3d {
+                                    c3d.custom_painting(ui);
+                                }
+                            });
                         });
                         if ctx.input(|i| i.viewport().close_requested()) {
                             // Tell parent to close us.
