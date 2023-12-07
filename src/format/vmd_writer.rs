@@ -2,16 +2,16 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use crate::motion::{Motion, ShadowKeyframe, LightKeyframe, CameraKeyframe, MorphKeyframe, BoneKeyframe, IkKeyframe};
+use super::motion::{Motion, ShadowKeyframe, LightKeyframe, CameraKeyframe, MorphKeyframe, BoneKeyframe, IkKeyframe};
 use std::path::Path;
-use crate::vmd_reader::VERSION_2;
+use super::vmd_reader::VERSION_2;
 use encoding::{Encoding, DecoderTrap, EncoderTrap};
 use glam::Vec4;
 use std::fs;
 use std::io::Write;
 use byteorder::{WriteBytesExt, LittleEndian};
 use encoding::all::WINDOWS_31J;
-use crate::common::{write_float3, write_float4, write_items, write_quat};
+use super::common::{write_float3, write_float4, write_items, write_quat};
 use std::cmp::max;
 use std::collections::HashMap;
 

@@ -4,7 +4,9 @@ use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{Atom
 use egui::{TextStyle, ScrollArea, mutex::Mutex};
 use egui_extras::{Column, TableBuilder};
 
-use crate::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx, dict::{bone_jap_to_eng, morph_jap_to_eng}, custom3d_wgpu::{Custom3d, self}};
+use crate::format::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx};
+use crate::dict::{bone_jap_to_eng, morph_jap_to_eng};
+use crate::custom3d_wgpu::{Custom3d, self};
 
 #[derive(PartialEq)]
 enum Page {

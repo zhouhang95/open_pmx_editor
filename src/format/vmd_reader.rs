@@ -15,8 +15,8 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use glam::*;
 use std::io::SeekFrom;
 
-use crate::motion::*;
-use crate::common::*;
+use super::common::*;
+use super::motion::*;
 
 
 const VERSION_1: &str = "Vocaloid Motion Data file";

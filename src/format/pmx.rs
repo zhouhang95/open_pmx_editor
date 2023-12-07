@@ -13,7 +13,8 @@ use byteorder::{LE, ReadBytesExt};
 use glam::*;
 use uuid::Uuid;
 
-use crate::{motion::Motion, common::*};
+use super::motion::Motion;
+use super::common::*;
 use bitflags::bitflags;
 
 

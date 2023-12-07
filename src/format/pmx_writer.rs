@@ -8,8 +8,9 @@ use byteorder::{LE, WriteBytesExt};
 use byteorder::{LittleEndian, ReadBytesExt};
 use glam::*;
 
-use crate::common::*;
-use crate::pmx::*;
+use super::common::*;
+use super::pmx::*;
+
 
 impl Pmx {
     fn write_string(file: &mut Cursor<Vec<u8>>, content: &str) {

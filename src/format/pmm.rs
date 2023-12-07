@@ -12,11 +12,13 @@ use encoding::all::WINDOWS_31J;
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::{SeekFrom, Cursor};
-use crate::vmd_reader::{read_string, read_bezier_control_point_pair1};
-use crate::common::{read_items, read_fix_items, read_float3, read_float4, read_quat};
-use crate::motion::*;
+use super::vmd_reader::{read_string, read_bezier_control_point_pair1};
+use super::common::{read_items, read_fix_items, read_float3, read_float4, read_quat};
+use super::motion::*;
 use std::collections::BTreeMap;
 use glam::*;
+
+use super::motion::*;
 
 const PMM_HEADER: &str = "Polygon Movie maker 0002";
 
