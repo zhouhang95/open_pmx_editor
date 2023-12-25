@@ -1,4 +1,4 @@
-use std::{num::NonZeroU64, path::Path};
+use std::path::Path;
 
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
@@ -10,10 +10,10 @@ pub struct Custom3d {
 }
 
 impl Custom3d {
-    pub fn new<'a>(cc: &'a eframe::CreationContext<'a>) -> Option<Self> {
+    pub fn new<'a>(cc: &'a eframe::CreationContext<'a>) -> Self {
         // Get the WGPU render state from the eframe creation context. This can also be retrieved
         // from `eframe::Frame` when you don't have a `CreationContext` available.
-        let wgpu_render_state = cc.wgpu_render_state.as_ref()?;
+        let wgpu_render_state = cc.wgpu_render_state.as_ref().unwrap();
 
         let device = &wgpu_render_state.device;
 
@@ -31,7 +31,7 @@ impl Custom3d {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
-                    min_binding_size: NonZeroU64::new(16),
+                    min_binding_size: None,
                 },
                 count: None,
             }],
@@ -92,7 +92,7 @@ impl Custom3d {
                 uniform_buffer,
             });
 
-        Some(Self { angle: 0.0 })
+        Self { angle: 0.0 }
     }
 }
 

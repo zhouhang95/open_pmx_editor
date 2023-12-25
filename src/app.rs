@@ -33,8 +33,8 @@ pub struct TemplateApp {
     log_text: String,
     info_text: String,
     info_window_open: bool,
-    show_model_view: Arc<AtomicBool>,
-    custom3d: Arc<Mutex<Option<Custom3d>>>,
+    show_model_view: Arc<Mutex<bool>>,
+    custom3d: Arc<Mutex<Custom3d>>,
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
@@ -83,7 +83,7 @@ impl TemplateApp {
             pmx_data: None,
             pmx_bone_cur_value: 0,
             pmx_morph_cur_value: 0,
-            show_model_view: Arc::new(AtomicBool::new(false)),
+            show_model_view: Arc::new(Mutex::new(false)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
         }
     }
@@ -232,11 +232,9 @@ impl eframe::App for TemplateApp {
                 });
 
                 ui.menu_button("View", |ui| {
-                    let mut show_model_view = self.show_model_view.load(Ordering::Relaxed);
-                    if ui.checkbox(&mut show_model_view, "Show Model View").clicked() {
+                    if ui.checkbox(&mut self.show_model_view.lock(), "Show Model View").clicked() {
                         ui.close_menu();
                     }
-                    self.show_model_view.store(show_model_view, Ordering::Relaxed);
                 });
                 ui.menu_button("Help", |ui| {
                     if ui.button("Log").clicked() {
@@ -523,8 +521,8 @@ impl eframe::App for TemplateApp {
             });
         }
         {
-            if self.show_model_view.load(Ordering::Relaxed) {
-                let show_model_view = self.show_model_view.clone();
+            let show_model_view = self.show_model_view.clone();
+            if *show_model_view.lock() {
                 let custom3d = self.custom3d.clone();
                 ctx.show_viewport_deferred(
                     egui::ViewportId::from_hash_of("show_model_view"),
@@ -535,14 +533,12 @@ impl eframe::App for TemplateApp {
                         egui::CentralPanel::default().show(ctx, |ui| {
                             ui.label("Hello from deferred viewport");
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                                if let Some(c3d) = custom3d.lock().as_mut() {
-                                    c3d.custom_painting(ui);
-                                }
+                                custom3d.lock().custom_painting(ui);
                             });
                         });
                         if ctx.input(|i| i.viewport().close_requested()) {
                             // Tell parent to close us.
-                            show_model_view.store(false, Ordering::Relaxed);
+                            *show_model_view.lock() = false;
                         }
                     },
                 );
