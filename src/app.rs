@@ -83,7 +83,7 @@ impl TemplateApp {
             pmx_data: None,
             pmx_bone_cur_value: 0,
             pmx_morph_cur_value: 0,
-            show_model_view: Arc::new(Mutex::new(false)),
+            show_model_view: Arc::new(Mutex::new(true)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
         }
     }

@@ -1,8 +1,30 @@
 use std::path::Path;
-
+use glam::*;
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
     egui_wgpu::{self, wgpu},
+};
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+struct Vertex {
+    position: Vec3,
+    color: Vec3,
+}
+
+unsafe impl bytemuck::Pod for Vertex {}
+unsafe impl bytemuck::Zeroable for Vertex {}
+
+const VERTICES: &[Vertex] = &[
+    Vertex { position: vec3(0.0, 1.0, 0.0),   color: vec3(1.0, 0.0, 0.0) },
+    Vertex { position: vec3(1.0, -1.0, 0.0),  color: vec3(0.0, 1.0, 0.0) },
+    Vertex { position: vec3(-1.0, -1.0, 0.0), color: vec3(0.0, 0.0, 1.0) },
+];
+
+const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
+    array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+    step_mode: wgpu::VertexStepMode::Vertex,
+    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3],
 };
 
 pub struct Custom3d {
@@ -49,7 +71,7 @@ impl Custom3d {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[VERTEX_BUFFER_LAYOUT],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -68,6 +90,12 @@ impl Custom3d {
             // Mapping at creation (as done by the create_buffer_init utility) doesn't require us to to add the MAP_WRITE usage
             // (this *happens* to workaround this bug )
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+        });
+
+        let vert_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("custom3d vert"),
+            contents: bytemuck::cast_slice(VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -90,6 +118,7 @@ impl Custom3d {
                 pipeline,
                 bind_group,
                 uniform_buffer,
+                vert_buffer,
             });
 
         Self { angle: 0.0 }
@@ -184,6 +213,7 @@ struct TriangleRenderResources {
     pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
+    vert_buffer: wgpu::Buffer,
 }
 
 impl TriangleRenderResources {
@@ -199,6 +229,7 @@ impl TriangleRenderResources {
     fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
         // Draw our triangle!
         render_pass.set_pipeline(&self.pipeline);
+        render_pass.set_vertex_buffer(0, self.vert_buffer.slice(..));
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         render_pass.draw(0..3, 0..1);
     }

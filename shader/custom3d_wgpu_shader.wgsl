@@ -1,6 +1,11 @@
+struct VertexInput {
+    @location(0) pos: vec3f,
+    @location(1) color: vec3f,
+};
+
 struct VertexOut {
-    @location(0) color: vec4<f32>,
-    @builtin(position) position: vec4<f32>,
+    @location(0) color: vec4f,
+    @builtin(position) pos: vec4f,
 };
 
 struct Uniforms {
@@ -10,30 +15,18 @@ struct Uniforms {
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 
-var<private> v_positions: array<vec2<f32>, 3> = array<vec2<f32>, 3>(
-    vec2<f32>(0.0, 1.0),
-    vec2<f32>(1.0, -1.0),
-    vec2<f32>(-1.0, -1.0),
-);
-
-var<private> v_colors: array<vec4<f32>, 3> = array<vec4<f32>, 3>(
-    vec4<f32>(1.0, 0.0, 0.0, 1.0),
-    vec4<f32>(0.0, 1.0, 0.0, 1.0),
-    vec4<f32>(0.0, 0.0, 1.0, 1.0),
-);
-
 @vertex
-fn vs_main(@builtin(vertex_index) v_idx: u32) -> VertexOut {
+fn vs_main(model: VertexInput) -> VertexOut {
     var out: VertexOut;
 
-    out.position = vec4<f32>(v_positions[v_idx], 0.0, 1.0);
-    out.position.x = out.position.x * cos(uniforms.angle);
-    out.color = v_colors[v_idx];
+    out.pos = vec4f(model.pos, 1.0);
+    out.pos.x = out.pos.x * cos(uniforms.angle);
+    out.color = vec4f(model.color, 1.0);
 
     return out;
 }
 
 @fragment
-fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+fn fs_main(in: VertexOut) -> @location(0) vec4f {
     return in.color;
 }
