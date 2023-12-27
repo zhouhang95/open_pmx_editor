@@ -16,9 +16,17 @@ unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
 
 const VERTICES: &[Vertex] = &[
-    Vertex { position: vec3(0.0, 1.0, 0.0),   color: vec3(1.0, 0.0, 0.0) },
-    Vertex { position: vec3(1.0, -1.0, 0.0),  color: vec3(0.0, 1.0, 0.0) },
-    Vertex { position: vec3(-1.0, -1.0, 0.0), color: vec3(0.0, 0.0, 1.0) },
+    Vertex { position: vec3(-0.0868241, 0.49240386, 0.0), color: vec3(0.5, 0.0, 0.5) }, // A
+    Vertex { position: vec3(-0.49513406, 0.06958647, 0.0), color: vec3(0.5, 0.0, 0.5) }, // B
+    Vertex { position: vec3(-0.21918549, -0.44939706, 0.0), color: vec3(0.5, 0.0, 0.5) }, // C
+    Vertex { position: vec3(0.35966998, -0.3473291, 0.0), color: vec3(0.5, 0.0, 0.5) }, // D
+    Vertex { position: vec3(0.44147372, 0.2347359, 0.0), color: vec3(0.5, 0.0, 0.5) }, // E
+];
+
+const INDICES: &[u32] = &[
+    0, 1, 4,
+    1, 2, 4,
+    2, 3, 4,
 ];
 
 const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
@@ -98,6 +106,14 @@ impl Custom3d {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
+        let index_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(INDICES),
+                usage: wgpu::BufferUsages::INDEX,
+            }
+        );
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("custom3d"),
             layout: &bind_group_layout,
@@ -119,6 +135,8 @@ impl Custom3d {
                 bind_group,
                 uniform_buffer,
                 vert_buffer,
+                index_buffer,
+                num_indices: INDICES.len() as _,
             });
 
         Self { angle: 0.0 }
@@ -214,6 +232,8 @@ struct TriangleRenderResources {
     bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
     vert_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
 }
 
 impl TriangleRenderResources {
@@ -230,7 +250,8 @@ impl TriangleRenderResources {
         // Draw our triangle!
         render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vert_buffer.slice(..));
+        render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
-        render_pass.draw(0..3, 0..1);
+        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
     }
 }
