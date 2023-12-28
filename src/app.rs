@@ -88,12 +88,12 @@ impl TemplateApp {
         }
     }
     fn load_file(&mut self, p: &PathBuf) {
-        let ext = p.extension();
-        if ext == Some(OsStr::new("vmd")) || ext == Some(OsStr::new("VMD")) {
+        let ext = p.extension().unwrap_or_default().to_ascii_lowercase();
+        if ext == OsStr::new("vmd") {
             let content = std::fs::read(p).unwrap();
             self.vmd_motion = Some(Motion::read(content, p.to_str().unwrap()));
             self.page = Page::VmdBone;
-        } else if ext == Some(OsStr::new("pmx")) || ext == Some(OsStr::new("PMX")) {
+        } else if ext == OsStr::new("pmx") {
             let content = std::fs::read(p).unwrap();
             self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
             self.page = Page::Info;
