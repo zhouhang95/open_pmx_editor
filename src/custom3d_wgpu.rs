@@ -221,9 +221,17 @@ impl Custom3d {
         let (rect, response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), egui::Sense::drag());
 
-        // self.angle += response.drag_delta().x * 0.01;
-        self.camera.aspect_ratio = rect.aspect_ratio();
-        self.camera.orbit(response.drag_delta().x, response.drag_delta().y);
+        // manipulate camera
+        {
+            if ui.input(|i| i.modifiers.shift) {
+                self.camera.pan(response.drag_delta().x, response.drag_delta().y);
+            } else {
+                self.camera.orbit(response.drag_delta().x, response.drag_delta().y);
+            }
+            let scroll_delta = ui.input(|i| i.scroll_delta.y);
+            self.camera.dolly(if scroll_delta > 0.0 { 1.0 } else if scroll_delta < 0.0 { -1.0} else { 0.0 });
+            self.camera.aspect_ratio = rect.aspect_ratio();
+        }
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
             CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
