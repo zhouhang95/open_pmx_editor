@@ -31,6 +31,65 @@ const INDICES: &[u32] = &[
     2, 3, 4,
 ];
 
+const GRID: &[Vertex] = &[
+    // x axis
+    Vertex { position: vec3(-5.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0, -4.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -4.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0, -3.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -3.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0, -2.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -2.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0, -1.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -1.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  0.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 0.0, 0.0,  0.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 0.0, 0.0,  0.0), color: vec3(0.8, 0.2, 0.2) },
+    Vertex { position: vec3( 5.0, 0.0,  0.0), color: vec3(0.8, 0.2, 0.2) },
+    Vertex { position: vec3(-5.0, 0.0,  1.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  1.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  2.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  2.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  3.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  3.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  4.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  4.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    // z axis
+    Vertex { position: vec3(-5.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-5.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-4.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-4.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-3.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-3.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-2.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-2.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-1.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3(-1.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 0.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 0.0, 0.0,  0.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 0.0, 0.0,  0.0), color: vec3(0.2, 0.2, 0.8) },
+    Vertex { position: vec3( 0.0, 0.0,  5.0), color: vec3(0.2, 0.2, 0.8) },
+    Vertex { position: vec3( 1.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 1.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 2.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 2.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 3.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 3.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 4.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 4.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0, -5.0), color: vec3(0.3, 0.3, 0.3) },
+    Vertex { position: vec3( 5.0, 0.0,  5.0), color: vec3(0.3, 0.3, 0.3) },
+];
+
+const GRID_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
+    array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+    step_mode: wgpu::VertexStepMode::Vertex,
+    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3],
+};
+
 const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
     array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
     step_mode: wgpu::VertexStepMode::Vertex,
@@ -125,6 +184,54 @@ impl Custom3d {
             }],
         });
 
+        let grid_shader_path = Path::new("shader/grid.wgsl");
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Grid Shader"),
+            source: wgpu::ShaderSource::Wgsl(std::fs::read_to_string(grid_shader_path).unwrap().into()),
+        });
+
+        let grid_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("grid_pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[GRID_BUFFER_LAYOUT],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(wgpu_render_state.target_format.into())],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                ..Default::default()
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+        });
+        let grid_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("custom3d"),
+            contents: bytemuck::cast_slice(&[CameraUniform::new()]),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+        });
+
+        let grid_vert_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("custom3d vert"),
+            contents: bytemuck::cast_slice(GRID),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let grid_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("custom3d"),
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: grid_uniform_buffer.as_entire_binding(),
+            }],
+        });
+
         // Because the graphics pipeline must have the same lifetime as the egui render pass,
         // instead of storing the pipeline in our `Custom3D` struct, we insert it into the
         // `paint_callback_resources` type map, which is stored alongside the render pass.
@@ -140,7 +247,16 @@ impl Custom3d {
                 index_buffer,
                 num_indices: INDICES.len() as _,
             });
-
+        wgpu_render_state
+            .renderer
+            .write()
+            .callback_resources
+            .insert(GridRenderResources {
+                grid_pipeline,
+                grid_bind_group,
+                grid_uniform_buffer,
+                grid_vert_buffer,
+            });
         Self { camera: Camera::new() }
     }
 }
@@ -216,6 +332,34 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
     }
 }
 
+struct CustomGridCallback {
+    camera_uniform: CameraUniform,
+}
+
+impl egui_wgpu::CallbackTrait for CustomGridCallback {
+    fn prepare(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        _egui_encoder: &mut wgpu::CommandEncoder,
+        resources: &mut egui_wgpu::CallbackResources,
+    ) -> Vec<wgpu::CommandBuffer> {
+        let resources: &GridRenderResources = resources.get().unwrap();
+        resources.prepare(device, queue, self.camera_uniform);
+        Vec::new()
+    }
+
+    fn paint<'a>(
+        &self,
+        _info: egui::PaintCallbackInfo,
+        render_pass: &mut wgpu::RenderPass<'a>,
+        resources: &'a egui_wgpu::CallbackResources,
+    ) {
+        let resources: &GridRenderResources = resources.get().unwrap();
+        resources.paint(render_pass);
+    }
+}
+
 impl Custom3d {
     pub fn custom_painting(&mut self, ui: &mut egui::Ui) {
         let (rect, response) =
@@ -235,6 +379,10 @@ impl Custom3d {
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
             CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
+        ));
+        ui.painter().add(egui_wgpu::Callback::new_paint_callback(
+            rect,
+            CustomGridCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
         ));
     }
 }
@@ -265,5 +413,31 @@ impl TriangleRenderResources {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+    }
+}
+
+struct GridRenderResources {
+    grid_pipeline: wgpu::RenderPipeline,
+    grid_bind_group: wgpu::BindGroup,
+    grid_uniform_buffer: wgpu::Buffer,
+    grid_vert_buffer: wgpu::Buffer,
+}
+
+impl GridRenderResources {
+    fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform) {
+        // Update our uniform buffer with the angle from the UI
+        queue.write_buffer(
+            &self.grid_uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[camera_uniform]),
+        );
+    }
+
+    fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
+        // Draw our triangle!
+        render_pass.set_pipeline(&self.grid_pipeline);
+        render_pass.set_vertex_buffer(0, self.grid_vert_buffer.slice(..));
+        render_pass.set_bind_group(0, &self.grid_bind_group, &[]);
+        render_pass.draw(0..GRID.len() as _,  0..1);
     }
 }
