@@ -9,7 +9,7 @@ struct VertexOut {
 };
 
 struct Uniforms {
-    @size(16) angle: f32, // pad to 16 bytes
+    view_proj: mat4x4f,
 };
 
 @group(0) @binding(0)
@@ -19,8 +19,7 @@ var<uniform> uniforms: Uniforms;
 fn vs_main(model: VertexInput) -> VertexOut {
     var out: VertexOut;
 
-    out.pos = vec4f(model.pos, 1.0);
-    out.pos.x = out.pos.x * cos(uniforms.angle);
+    out.pos = uniforms.view_proj * vec4f(model.pos, 1.0);
     out.color = vec4f(model.color, 1.0);
 
     return out;

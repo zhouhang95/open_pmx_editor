@@ -5,6 +5,8 @@ use eframe::{
     egui_wgpu::{self, wgpu},
 };
 
+use crate::camera::{Camera, CameraUniform};
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 struct Vertex {
@@ -36,7 +38,7 @@ const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBuff
 };
 
 pub struct Custom3d {
-    angle: f32,
+    camera: Camera,
 }
 
 impl Custom3d {
@@ -94,7 +96,7 @@ impl Custom3d {
 
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d"),
-            contents: bytemuck::cast_slice(&[0.0_f32; 4]), // 16 bytes aligned!
+            contents: bytemuck::cast_slice(&[CameraUniform::new()]), // 16 bytes aligned!
             // Mapping at creation (as done by the create_buffer_init utility) doesn't require us to to add the MAP_WRITE usage
             // (this *happens* to workaround this bug )
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
@@ -139,7 +141,7 @@ impl Custom3d {
                 num_indices: INDICES.len() as _,
             });
 
-        Self { angle: 0.0 }
+        Self { camera: Camera::new() }
     }
 }
 
@@ -187,7 +189,7 @@ impl eframe::App for Custom3d {
 // The paint callback is called after finish prepare and is given access to egui's main render pass,
 // which can be used to issue draw commands.
 struct CustomTriangleCallback {
-    angle: f32,
+    camera_uniform: CameraUniform,
 }
 
 impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
@@ -199,7 +201,7 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
         let resources: &TriangleRenderResources = resources.get().unwrap();
-        resources.prepare(device, queue, self.angle);
+        resources.prepare(device, queue, self.camera_uniform);
         Vec::new()
     }
 
@@ -219,10 +221,12 @@ impl Custom3d {
         let (rect, response) =
             ui.allocate_exact_size(ui.available_size_before_wrap(), egui::Sense::drag());
 
-        self.angle += response.drag_delta().x * 0.01;
+        // self.angle += response.drag_delta().x * 0.01;
+        self.camera.aspect_ratio = rect.aspect_ratio();
+        self.camera.orbit(response.drag_delta().x, response.drag_delta().y);
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
-            CustomTriangleCallback { angle: self.angle },
+            CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
         ));
     }
 }
@@ -237,12 +241,12 @@ struct TriangleRenderResources {
 }
 
 impl TriangleRenderResources {
-    fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, angle: f32) {
+    fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform) {
         // Update our uniform buffer with the angle from the UI
         queue.write_buffer(
             &self.uniform_buffer,
             0,
-            bytemuck::cast_slice(&[angle, 0.0, 0.0, 0.0]),
+            bytemuck::cast_slice(&[camera_uniform]),
         );
     }
 
