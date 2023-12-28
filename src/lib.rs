@@ -6,4 +6,5 @@ mod format;
 mod dict;
 mod custom3d_wgpu;
 mod camera;
+mod grid;
 pub use app::TemplateApp;
