@@ -1,7 +1,7 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, str::FromStr};
 
-use egui::{TextStyle, ScrollArea, mutex::Mutex};
+use egui::{TextStyle, ScrollArea, mutex::Mutex, viewport, ViewportId};
 use egui_extras::{Column, TableBuilder};
 
 use crate::format::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx};
@@ -35,6 +35,7 @@ pub struct TemplateApp {
     info_window_open: bool,
     show_model_view: Arc<Mutex<bool>>,
     custom3d: Arc<Mutex<Custom3d>>,
+    model_viewport_id: ViewportId,
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
@@ -85,6 +86,7 @@ impl TemplateApp {
             pmx_morph_cur_value: 0,
             show_model_view: Arc::new(Mutex::new(true)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
+            model_viewport_id: egui::ViewportId::from_hash_of("model_viewport"),
         };
         s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
         s
@@ -112,14 +114,18 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.input(|i| {
+        let need_repaint_model_viewport = ctx.input(|i| {
             if i.raw.dropped_files.len() == 1 {
                 let f = i.raw.dropped_files[0].clone();
                 if let Some(p) = &f.path {
                     self.load_file(p);
                 }
             }
+            i.raw.dropped_files.len() == 1
         });
+        if need_repaint_model_viewport {
+            ctx.request_repaint_of(self.model_viewport_id);
+        }
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -536,7 +542,7 @@ impl eframe::App for TemplateApp {
             if *show_model_view.lock() {
                 let custom3d = self.custom3d.clone();
                 ctx.show_viewport_deferred(
-                    egui::ViewportId::from_hash_of("show_model_view"),
+                    self.model_viewport_id,
                     egui::ViewportBuilder::default()
                         .with_title("Model View")
                         .with_inner_size([500.0, 500.0]),
