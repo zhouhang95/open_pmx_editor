@@ -27,7 +27,7 @@ const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBuff
 pub struct Custom3d {
     camera: Camera,
     wgpu_render_state: RenderState,
-
+    pub planer: bool,
 }
 
 impl Custom3d {
@@ -47,6 +47,7 @@ impl Custom3d {
         Self {
             camera: Camera::new(),
             wgpu_render_state,
+            planer: false
         }
     }
     pub fn load_mesh(&self, pmx: Arc<Mutex<Pmx>>) {
@@ -143,11 +144,11 @@ impl Custom3d {
         }
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
-            CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
+            CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera, self.planer) },
         ));
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
-            CustomGridCallback { camera_uniform: CameraUniform::from_camera(&self.camera) },
+            CustomGridCallback { camera_uniform: CameraUniform::from_camera(&self.camera, self.planer) },
         ));
     }
 }

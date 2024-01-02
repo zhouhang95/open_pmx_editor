@@ -549,8 +549,10 @@ impl eframe::App for TemplateApp {
                     move |ctx, class| {
                         egui::CentralPanel::default().show(ctx, |ui| {
                             ui.label("Hello from deferred viewport");
+                            let mut custom3d = custom3d.lock();
+                            ui.checkbox(&mut custom3d.planer, "planer");
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                                custom3d.lock().custom_painting(ui);
+                                custom3d.custom_painting(ui);
                             });
                         });
                         if ctx.input(|i| i.viewport().close_requested()) {

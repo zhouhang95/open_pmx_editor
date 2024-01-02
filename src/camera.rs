@@ -124,6 +124,7 @@ pub struct CameraUniform {
     view_proj: Mat4,
     view: Mat4,
     proj: Mat4,
+    planer: Vec4,
 }
 
 unsafe impl bytemuck::Pod for CameraUniform {}
@@ -135,10 +136,11 @@ impl CameraUniform {
             view_proj: Mat4::IDENTITY,
             view: Mat4::IDENTITY,
             proj: Mat4::IDENTITY,
+            planer: Vec4::ZERO,
         }
     }
 
-    pub fn from_camera(camera: &Camera) -> Self {
+    pub fn from_camera(camera: &Camera, planer: bool) -> Self {
         let proj = camera.proj();
         let view = camera.view();
         let view_proj = camera.proj() * camera.view();
@@ -146,6 +148,7 @@ impl CameraUniform {
             view_proj,
             view,
             proj,
+            planer: vec4(if planer {1.0} else {0.0}, 0.0, 0.0, 0.0),
         }
     }
 }

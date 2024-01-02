@@ -12,6 +12,7 @@ struct Uniforms {
     view_proj: mat4x4f,
     view: mat4x4f,
     proj: mat4x4f,
+    planer: vec4f,
 };
 
 @group(0) @binding(0)
