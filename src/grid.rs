@@ -157,9 +157,7 @@ impl GridRenderResources {
             grid_vert_buffer,
         }
     }
-}
 
-impl GridRenderResources {
     fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform) {
         queue.write_buffer(
             &self.grid_uniform_buffer,
