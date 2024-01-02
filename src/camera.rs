@@ -119,21 +119,33 @@ impl Camera {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone)]
 pub struct CameraUniform {
-    view_proj: [f32; 16],
+    view_proj: Mat4,
+    view: Mat4,
+    proj: Mat4,
 }
+
+unsafe impl bytemuck::Pod for CameraUniform {}
+unsafe impl bytemuck::Zeroable for CameraUniform {}
 
 impl CameraUniform {
     pub fn new() -> Self {
         Self {
-            view_proj: *Mat4::IDENTITY.as_ref(),
+            view_proj: Mat4::IDENTITY,
+            view: Mat4::IDENTITY,
+            proj: Mat4::IDENTITY,
         }
     }
 
     pub fn from_camera(camera: &Camera) -> Self {
+        let proj = camera.proj();
+        let view = camera.view();
+        let view_proj = camera.proj() * camera.view();
         Self {
-            view_proj: *(camera.proj() * camera.view()).as_ref(),
+            view_proj,
+            view,
+            proj,
         }
     }
 }

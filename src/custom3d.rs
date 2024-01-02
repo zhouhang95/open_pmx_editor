@@ -1,35 +1,22 @@
 use std::{path::Path, sync::Arc};
+use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
     egui_wgpu::{self, wgpu, RenderState},
 };
 
-use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}};
+use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::Pmx};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 struct Vertex {
-    position: Vec3,
-    color: Vec3,
+    pos: Vec3,
+    nrm: Vec3,
 }
 
 unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
-
-const VERTICES: &[Vertex] = &[
-    Vertex { position: vec3(-0.0868241, 0.49240386, 0.0), color: vec3(0.5, 0.0, 0.5) }, // A
-    Vertex { position: vec3(-0.49513406, 0.06958647, 0.0), color: vec3(0.5, 0.0, 0.5) }, // B
-    Vertex { position: vec3(-0.21918549, -0.44939706, 0.0), color: vec3(0.5, 0.0, 0.5) }, // C
-    Vertex { position: vec3(0.35966998, -0.3473291, 0.0), color: vec3(0.5, 0.0, 0.5) }, // D
-    Vertex { position: vec3(0.44147372, 0.2347359, 0.0), color: vec3(0.5, 0.0, 0.5) }, // E
-];
-
-const INDICES: &[u32] = &[
-    0, 1, 4,
-    1, 2, 4,
-    2, 3, 4,
-];
 
 const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
     array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
@@ -62,12 +49,28 @@ impl Custom3d {
             wgpu_render_state,
         }
     }
-    pub fn load_mesh(&self) {
+    pub fn load_mesh(&self, pmx: Arc<Mutex<Pmx>>) {
+        let pmx = pmx.lock();
+        let mut verts = Vec::new();
+        for v in &pmx.verts {
+            verts.push(Vertex { pos: v.pos, nrm: v.nrm });
+        }
+        let mut idxs = Vec::new();
+        for i in &pmx.faces {
+            idxs.push(i[0]);
+            idxs.push(i[1]);
+            idxs.push(i[2]);
+        }
         self.wgpu_render_state
             .renderer
             .write()
             .callback_resources
-            .insert(TriangleRenderResources::new(self.wgpu_render_state.device.clone(), self.wgpu_render_state.target_format.into()));
+            .insert(TriangleRenderResources::new(
+                self.wgpu_render_state.device.clone(),
+                self.wgpu_render_state.target_format.into(),
+                verts,
+                idxs,
+            ));
     }
 }
 
@@ -159,17 +162,22 @@ struct TriangleRenderResources {
 }
 
 impl TriangleRenderResources {
-    pub fn new(device: Arc<wgpu::Device>, color_target_state: wgpu::ColorTargetState) -> Self {
-        let shader_path = Path::new("shader/grid.wgsl");
+    pub fn new(
+        device: Arc<wgpu::Device>,
+        color_target_state: wgpu::ColorTargetState,
+        verts: Vec<Vertex>,
+        idxs: Vec<u32>,
+    ) -> Self {
+        let shader_path = Path::new("shader/mesh.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Grid Shader"),
+            label: Some("Mesh Shader"),
             source: wgpu::ShaderSource::Wgsl(std::fs::read_to_string(shader_path).unwrap().into()),
         });
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("custom3d"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -185,7 +193,7 @@ impl TriangleRenderResources {
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("grid_pipeline"),
+            label: Some("mesh_pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -218,14 +226,14 @@ impl TriangleRenderResources {
 
         let vert_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d vert"),
-            contents: bytemuck::cast_slice(VERTICES),
+            contents: bytemuck::cast_slice(&verts),
             usage: wgpu::BufferUsages::VERTEX,
         });
 
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
+                contents: bytemuck::cast_slice(&idxs),
                 usage: wgpu::BufferUsages::INDEX,
             }
         );
@@ -244,7 +252,7 @@ impl TriangleRenderResources {
             uniform_buffer,
             vert_buffer,
             index_buffer,
-            num_indices: INDICES.len() as _,
+            num_indices: idxs.len() as _,
         }
     }
     fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform) {

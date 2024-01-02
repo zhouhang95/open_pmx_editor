@@ -23,7 +23,7 @@ enum Page {
 
 pub struct TemplateApp {
     vmd_motion: Option<Motion>,
-    pmx_data: Option<Pmx>,
+    pmx_data: Option<Arc<Mutex<Pmx>>>,
     pmx_bone_cur_value: usize,
     pmx_morph_cur_value: usize,
     page: Page,
@@ -97,9 +97,12 @@ impl TemplateApp {
             self.page = Page::VmdBone;
         } else if ext == OsStr::new("pmx") {
             let content = std::fs::read(p).unwrap();
-            self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
+            let pmx_data = Arc::new(Mutex::new(Pmx::read(content, p.to_str().unwrap())));
+            pmx_data.lock().right_hand();
+            pmx_data.lock().scale(0.08);
+            self.pmx_data = Some(pmx_data.clone());
             self.page = Page::Info;
-            self.custom3d.lock().load_mesh();
+            self.custom3d.lock().load_mesh(pmx_data);
         }
     }
 }
@@ -136,6 +139,7 @@ impl eframe::App for TemplateApp {
                     }
                     if ui.button("Japanese to Engligh").clicked() {
                         if let Some(m) = &mut self.pmx_data {
+                            let mut m = m.lock();
                             for b in &mut m.bones {
                                 b.name = bone_jap_to_eng(&b.name);
                             }
@@ -169,6 +173,7 @@ impl eframe::App for TemplateApp {
                                 .add_filter("Poygon Mesh data eXtension", &["pmx"])
                                 .save_file();
                             if let Some(p) = &path {
+                                let m = m.lock();
                                 let contents = m.write();
                                 std::fs::write(p, contents).unwrap();
                             }
@@ -209,6 +214,7 @@ impl eframe::App for TemplateApp {
                     }
                     if ui.button("Check missing bones and morphs").clicked() {
                         if let Some(pd) = &self.pmx_data {
+                            let pd = pd.lock();
                             if let Some(vm) = &self.vmd_motion {
                                 let missing_bones = pd.check_missing_bones(&vm.get_useful_bone_names());
                                 let missing_morphs = pd.check_missing_morphs(&vm.get_useful_morph_names());
@@ -326,6 +332,7 @@ impl eframe::App for TemplateApp {
                 Page::Bone => {
                     let mut names = Vec::new();
                     if let Some(m) = &self.pmx_data {
+                        let m = m.lock();
                         ui.heading(&m.name);
                         for b in &m.bones {
                             names.push(b.name.clone());
@@ -356,6 +363,7 @@ impl eframe::App for TemplateApp {
                 Page::Morph => {
                     let mut names = Vec::new();
                     if let Some(m) = &self.pmx_data {
+                        let m = m.lock();
                         ui.heading(&m.name);
                         for morph in &m.morphs {
                             names.push(morph.name.clone());
@@ -390,6 +398,7 @@ impl eframe::App for TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| match self.page {
             Page::Info => {
                 if let Some(m) = &self.pmx_data {
+                    let m = m.lock();
                     ui.heading(&m.name);
                     ui.label(&m.comment);
                 }
