@@ -56,16 +56,18 @@ impl Custom3d {
             .renderer
             .write()
             .callback_resources
-            .insert(TriangleRenderResources::new(wgpu_render_state.device.clone(), wgpu_render_state.target_format.into()));
-        wgpu_render_state
-            .renderer
-            .write()
-            .callback_resources
             .insert(GridRenderResources::new(wgpu_render_state.device.clone(), wgpu_render_state.target_format.into()));
         Self {
             camera: Camera::new(),
             wgpu_render_state,
         }
+    }
+    pub fn load_mesh(&self) {
+        self.wgpu_render_state
+            .renderer
+            .write()
+            .callback_resources
+            .insert(TriangleRenderResources::new(self.wgpu_render_state.device.clone(), self.wgpu_render_state.target_format.into()));
     }
 }
 
@@ -101,8 +103,9 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         _egui_encoder: &mut wgpu::CommandEncoder,
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
-        let resources: &TriangleRenderResources = resources.get().unwrap();
-        resources.prepare(device, queue, self.camera_uniform);
+        if let Some(resources) = resources.get::<TriangleRenderResources>() {
+            resources.prepare(device, queue, self.camera_uniform);
+        }
         Vec::new()
     }
 
@@ -112,8 +115,9 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         render_pass: &mut wgpu::RenderPass<'a>,
         resources: &'a egui_wgpu::CallbackResources,
     ) {
-        let resources: &TriangleRenderResources = resources.get().unwrap();
-        resources.paint(render_pass);
+        if let Some(resources) = resources.get::<TriangleRenderResources>() {
+            resources.paint(render_pass);
+        }
     }
 }
 

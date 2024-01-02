@@ -1,12 +1,12 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, str::FromStr};
 
 use egui::{TextStyle, ScrollArea, mutex::Mutex};
 use egui_extras::{Column, TableBuilder};
 
 use crate::format::{motion::{Motion, BoneKeyframe, MorphKeyframe}, pmm::read_pmm, pmx::Pmx};
 use crate::dict::{bone_jap_to_eng, morph_jap_to_eng};
-use crate::custom3d_wgpu::{Custom3d, self};
+use crate::custom3d::{Custom3d, self};
 
 #[derive(PartialEq)]
 enum Page {
@@ -72,7 +72,7 @@ impl TemplateApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         setup_custom_fonts(&cc.egui_ctx);
-        Self {
+        let mut s = Self {
             vmd_motion: None,
             bone_cur_value: 0,
             morph_cur_value: 0,
@@ -85,7 +85,9 @@ impl TemplateApp {
             pmx_morph_cur_value: 0,
             show_model_view: Arc::new(Mutex::new(true)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
-        }
+        };
+        s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
+        s
     }
     fn load_file(&mut self, p: &PathBuf) {
         let ext = p.extension().unwrap_or_default().to_ascii_lowercase();
@@ -97,6 +99,7 @@ impl TemplateApp {
             let content = std::fs::read(p).unwrap();
             self.pmx_data = Some(Pmx::read(content, p.to_str().unwrap()));
             self.page = Page::Info;
+            self.custom3d.lock().load_mesh();
         }
     }
 }
