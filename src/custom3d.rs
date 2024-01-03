@@ -224,7 +224,7 @@ impl TriangleRenderResources {
                 depth_compare: wgpu::CompareFunction::LessEqual,
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState {
-                    constant: -1000,
+                    constant: -400,
                     slope_scale: 0.0,
                     clamp: 0.0,
                 },
