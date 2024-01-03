@@ -548,9 +548,11 @@ impl eframe::App for TemplateApp {
                         .with_inner_size([500.0, 500.0]),
                     move |ctx, class| {
                         egui::CentralPanel::default().show(ctx, |ui| {
-                            ui.label("Hello from deferred viewport");
                             let mut custom3d = custom3d.lock();
-                            ui.checkbox(&mut custom3d.planer, "planer");
+                            ui.horizontal(|ui| {
+                                ui.checkbox(&mut custom3d.planer, "planer");
+                                ui.checkbox(&mut custom3d.wireframe, "wireframe");
+                            });
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
                                 custom3d.custom_painting(ui);
                             });

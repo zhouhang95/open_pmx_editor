@@ -28,6 +28,7 @@ pub struct Custom3d {
     camera: Camera,
     wgpu_render_state: RenderState,
     pub planer: bool,
+    pub wireframe: bool,
 }
 
 impl Custom3d {
@@ -47,7 +48,8 @@ impl Custom3d {
         Self {
             camera: Camera::new(),
             wgpu_render_state,
-            planer: false
+            planer: false,
+            wireframe: false,
         }
     }
     pub fn load_mesh(&self, pmx: Arc<Mutex<Pmx>>) {
@@ -97,6 +99,7 @@ impl Custom3d {
 // which can be used to issue draw commands.
 struct CustomTriangleCallback {
     camera_uniform: CameraUniform,
+    draw_wireframe: bool,
 }
 
 impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
@@ -107,8 +110,8 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         _egui_encoder: &mut wgpu::CommandEncoder,
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
-        if let Some(resources) = resources.get::<TriangleRenderResources>() {
-            resources.prepare(device, queue, self.camera_uniform);
+        if let Some(resources) = resources.get_mut::<TriangleRenderResources>() {
+            resources.prepare(device, queue, self.camera_uniform, self.draw_wireframe);
         }
         Vec::new()
     }
@@ -144,7 +147,10 @@ impl Custom3d {
         }
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
-            CustomTriangleCallback { camera_uniform: CameraUniform::from_camera(&self.camera, self.planer) },
+            CustomTriangleCallback {
+                camera_uniform: CameraUniform::from_camera(&self.camera, self.planer),
+                draw_wireframe: self.wireframe,
+            },
         ));
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
@@ -160,6 +166,8 @@ struct TriangleRenderResources {
     vert_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    wireframe_pipeline: wgpu::RenderPipeline,
+    draw_wireframe: bool,
 }
 
 impl TriangleRenderResources {
@@ -191,6 +199,34 @@ impl TriangleRenderResources {
             label: Some("custom3d"),
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
+        });
+
+        let wireframe_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("mesh_pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[VERTEX_BUFFER_LAYOUT],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "wireframe_main",
+                targets: &[Some(color_target_state.clone())],
+            }),
+            primitive: wgpu::PrimitiveState {
+                polygon_mode: wgpu::PolygonMode::Line,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::LessEqual,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -254,9 +290,12 @@ impl TriangleRenderResources {
             vert_buffer,
             index_buffer,
             num_indices: idxs.len() as _,
+            wireframe_pipeline,
+            draw_wireframe: false,
         }
     }
-    fn prepare(&self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform) {
+    fn prepare(&mut self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform, draw_wireframe: bool) {
+        self.draw_wireframe = draw_wireframe;
         // Update our uniform buffer with the angle from the UI
         queue.write_buffer(
             &self.uniform_buffer,
@@ -272,5 +311,9 @@ impl TriangleRenderResources {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        if self.draw_wireframe {
+            render_pass.set_pipeline(&self.wireframe_pipeline);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        }
     }
 }

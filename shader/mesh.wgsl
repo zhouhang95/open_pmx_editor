@@ -38,3 +38,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
     var ins = mix(0.4, 1.0, saturate(nrm_cs.z));
     return vec4f(ins, ins, ins, 0.0);
 }
+
+@fragment
+fn wireframe_main(in: VertexOut) -> @location(0) vec4f {
+    return vec4f(1.0, 0.5, 0.0, 0.0);
+}
