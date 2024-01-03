@@ -1,6 +1,8 @@
 #![allow(dead_code, unused_imports, unused_variables)]
 use glam::*;
 
+use crate::custom3d::DrawFlag;
+
 pub struct Camera {
     pub pos: Vec3,
     pub yaw: f32,
@@ -140,7 +142,7 @@ impl CameraUniform {
         }
     }
 
-    pub fn from_camera(camera: &Camera, planer: bool) -> Self {
+    pub fn from_camera(camera: &Camera, dw: DrawFlag) -> Self {
         let proj = camera.proj();
         let view = camera.view();
         let view_proj = camera.proj() * camera.view();
@@ -148,7 +150,7 @@ impl CameraUniform {
             view_proj,
             view,
             proj,
-            planer: vec4(if planer {1.0} else {0.0}, 0.0, 0.0, 0.0),
+            planer: vec4(if dw.planer {1.0} else {0.0}, if dw.gray {1.0} else {0.0}, 0.0, 0.0),
         }
     }
 }

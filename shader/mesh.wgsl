@@ -13,7 +13,7 @@ struct Uniforms {
     view_proj: mat4x4f,
     view: mat4x4f,
     proj: mat4x4f,
-    planer: vec4f,
+    flag: vec4f,
 };
 
 @group(0) @binding(0)
@@ -32,8 +32,11 @@ fn vs_main(model: VertexInput) -> VertexOut {
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
+    if uniforms.flag.y > 0.0 {
+        return vec4f(0.7, 0.7, 0.7, 0.0);
+    }
     var planer_nrm_os = -normalize(cross(dpdx(in.opos), dpdy(in.opos)));
-    var nrm_os = mix(in.nrm, planer_nrm_os, uniforms.planer.x);
+    var nrm_os = mix(in.nrm, planer_nrm_os, uniforms.flag.x);
     var nrm_cs = uniforms.view * vec4f(nrm_os, 0.0);
     var ins = mix(0.4, 1.0, saturate(nrm_cs.z));
     return vec4f(ins, ins, ins, 0.0);
@@ -41,5 +44,5 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
 
 @fragment
 fn wireframe_main(in: VertexOut) -> @location(0) vec4f {
-    return vec4f(1.0, 0.5, 0.0, 0.0);
+    return vec4f(0.22, 0.22, 0.295, 0.0);
 }

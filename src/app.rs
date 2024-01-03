@@ -550,8 +550,9 @@ impl eframe::App for TemplateApp {
                         egui::CentralPanel::default().show(ctx, |ui| {
                             let mut custom3d = custom3d.lock();
                             ui.horizontal(|ui| {
-                                ui.checkbox(&mut custom3d.planer, "planer");
-                                ui.checkbox(&mut custom3d.wireframe, "wireframe");
+                                ui.checkbox(&mut custom3d.draw_flag.planer, "planer");
+                                ui.checkbox(&mut custom3d.draw_flag.wireframe, "wireframe");
+                                ui.checkbox(&mut custom3d.draw_flag.gray, "gray");
                             });
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
                                 custom3d.custom_painting(ui);

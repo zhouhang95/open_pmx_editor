@@ -24,11 +24,16 @@ const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBuff
     attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3],
 };
 
+#[derive(Default, Clone, Copy)]
+pub struct DrawFlag {
+    pub planer: bool,
+    pub wireframe: bool,
+    pub gray: bool,
+}
 pub struct Custom3d {
     camera: Camera,
     wgpu_render_state: RenderState,
-    pub planer: bool,
-    pub wireframe: bool,
+    pub draw_flag: DrawFlag,
 }
 
 impl Custom3d {
@@ -48,8 +53,7 @@ impl Custom3d {
         Self {
             camera: Camera::new(),
             wgpu_render_state,
-            planer: false,
-            wireframe: false,
+            draw_flag: Default::default(),
         }
     }
     pub fn load_mesh(&self, pmx: Arc<Mutex<Pmx>>) {
@@ -148,13 +152,13 @@ impl Custom3d {
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
             CustomTriangleCallback {
-                camera_uniform: CameraUniform::from_camera(&self.camera, self.planer),
-                draw_wireframe: self.wireframe,
+                camera_uniform: CameraUniform::from_camera(&self.camera, self.draw_flag),
+                draw_wireframe: self.draw_flag.wireframe,
             },
         ));
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
             rect,
-            CustomGridCallback { camera_uniform: CameraUniform::from_camera(&self.camera, self.planer) },
+            CustomGridCallback { camera_uniform: CameraUniform::from_camera(&self.camera, self.draw_flag) },
         ));
     }
 }
