@@ -90,6 +90,7 @@ impl Custom3d {
                 self.wgpu_render_state.target_format.into(),
                 verts,
                 idxs,
+                pmx.clone(),
             ));
     }
 }
@@ -182,7 +183,7 @@ struct TriangleRenderResources {
     uniform_buffer: wgpu::Buffer,
     vert_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_indices: u32,
+    pmx: Pmx,
     wireframe_pipeline: wgpu::RenderPipeline,
     draw_wireframe: bool,
 }
@@ -193,6 +194,7 @@ impl TriangleRenderResources {
         color_target_state: wgpu::ColorTargetState,
         verts: Vec<Vertex>,
         idxs: Vec<u32>,
+        pmx: Pmx,
     ) -> Self {
         let shader_path = Path::new("shader/mesh.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -310,7 +312,7 @@ impl TriangleRenderResources {
             uniform_buffer,
             vert_buffer,
             index_buffer,
-            num_indices: idxs.len() as _,
+            pmx,
             wireframe_pipeline,
             draw_wireframe: false,
         }
@@ -327,14 +329,25 @@ impl TriangleRenderResources {
 
     fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
         // Draw our triangle!
-        render_pass.set_pipeline(&self.pipeline);
         render_pass.set_vertex_buffer(0, self.vert_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
-        render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
-        if self.draw_wireframe {
-            render_pass.set_pipeline(&self.wireframe_pipeline);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+        for (i, mat) in self.pmx.mats.iter().enumerate() {
+            if mat.diffuse.w == 0.0 {
+                continue;
+            }
+            let mut start_index = 0;
+            for j in 0..i {
+                start_index += self.pmx.mats[j].associated_face_count;
+            }
+            let face_count = mat.associated_face_count;
+            let indices = (start_index * 3)..(start_index * 3 + face_count * 3);
+            render_pass.set_pipeline(&self.pipeline);
+            render_pass.draw_indexed(indices.clone(), 0, 0..1);
+            if self.draw_wireframe {
+                render_pass.set_pipeline(&self.wireframe_pipeline);
+                render_pass.draw_indexed(indices, 0, 0..1);
+            }
         }
     }
 }
