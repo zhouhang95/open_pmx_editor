@@ -6,6 +6,19 @@ use eframe::{
     egui_wgpu::{self, wgpu, RenderState},
 };
 
+use image::{io::Reader as ImageReader, RgbaImage};
+use once_cell::sync::Lazy;
+
+pub const IMAGE_TOONS: Lazy<Vec<RgbaImage>> = Lazy::new(|| {
+    let mut res = Vec::new();
+    for i in 1..=10 {
+        let reader = ImageReader::open(format!("assets/toons/toon{:02}.bmp", i)).unwrap();
+        let img = reader.decode().unwrap().into_rgba8();
+        res.push(img);
+    }
+    res
+});
+
 use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::Pmx};
 
 #[repr(C)]

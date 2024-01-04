@@ -27,6 +27,11 @@ serde = { version = "1", features = ["derive"] }
 
 env_logger = "0.10"
 
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["png", "jpeg", "exr", "bmp", "dds", "jpeg_rayon"]
+
 [profile.release]
 opt-level = 2 # fast and small wasm
 

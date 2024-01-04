@@ -11,7 +11,12 @@ use std::collections::*;
 
 use byteorder::{LE, ReadBytesExt};
 use glam::*;
+use image::Rgba;
+use image::RgbaImage;
 use uuid::Uuid;
+use image::io::Reader as ImageReader;
+use image::ImageFormat;
+use image::DynamicImage;
 
 use super::motion::Motion;
 use super::common::*;
@@ -336,6 +341,23 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
+    pub fn load_tex(&self) -> Vec<RgbaImage> {
+        let mut res = Vec::new();
+        for tex in &self.texs {
+            if let Ok(mut reader) = ImageReader::open("assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/".to_string() + tex) {
+                let tl = tex.to_lowercase();
+                if tl.ends_with("sph") || tl.ends_with("spa") {
+                    reader.set_format(ImageFormat::Bmp);
+                }
+                let img = reader.decode().unwrap().into_rgba8();
+                res.push(img);
+            } else {
+                eprintln!("tex: {} miss", tex);
+                res.push(RgbaImage::from_pixel(64, 64, Rgba::<u8>([178, 178, 178, 255])));
+            }
+        }
+        res
+    }
     fn read_string(file: &mut Cursor<Vec<u8>>, utf8: bool) -> String {
         let len = file.read_i32::<LE>().unwrap() as usize;
         if len == 0 {
