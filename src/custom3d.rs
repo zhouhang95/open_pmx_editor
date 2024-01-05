@@ -6,7 +6,7 @@ use eframe::{
     egui_wgpu::{self, wgpu, RenderState},
 };
 
-use image::{io::Reader as ImageReader, RgbaImage};
+use image::{io::Reader as ImageReader, RgbaImage, Rgba};
 use once_cell::sync::Lazy;
 
 #[allow(dead_code)]
@@ -20,13 +20,14 @@ pub const IMAGE_TOONS: Lazy<Vec<RgbaImage>> = Lazy::new(|| {
     res
 });
 
-use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::Pmx};
+use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::Pmx, texture::TextureWrapper};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 struct Vertex {
     pos: Vec3,
     nrm: Vec3,
+    uv: Vec2,
 }
 
 unsafe impl bytemuck::Pod for Vertex {}
@@ -35,7 +36,7 @@ unsafe impl bytemuck::Zeroable for Vertex {}
 const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
     array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
     step_mode: wgpu::VertexStepMode::Vertex,
-    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3],
+    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x2],
 };
 
 #[derive(Default, Clone, Copy)]
@@ -85,8 +86,7 @@ impl Custom3d {
             .write()
             .callback_resources
             .insert(TriangleRenderResources::new(
-                self.wgpu_render_state.device.clone(),
-                self.wgpu_render_state.target_format.into(),
+                self.wgpu_render_state.clone(),
                 pmx.clone(),
             ));
     }
@@ -182,6 +182,7 @@ struct TriangleRenderResources {
     uniform_buffer: wgpu::Buffer,
     vert_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
+    default_bind_group: wgpu::BindGroup,
     pmx: Pmx,
     wireframe_pipeline: wgpu::RenderPipeline,
     draw_wireframe: bool,
@@ -190,10 +191,52 @@ struct TriangleRenderResources {
 
 impl TriangleRenderResources {
     pub fn new(
-        device: Arc<wgpu::Device>,
-        color_target_state: wgpu::ColorTargetState,
+        render_state: RenderState,
         pmx: Pmx,
     ) -> Self {
+        let device = render_state.device.clone();
+        let color_target_state = render_state.target_format.clone();
+        let queue = render_state.queue.clone();
+
+        let default_image = RgbaImage::from_pixel(64, 64, Rgba::<u8>([255; 4]));
+        let default_texture = TextureWrapper::from_image(&device, &queue, &default_image, None);
+
+        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+            label: Some("texture_bind_group_layout"),
+        });
+
+        let default_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&default_texture.view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&default_texture.sampler),
+                },
+            ],
+            label: Some("default_bind_group"),
+        });
         let shader_path = Path::new("shader/mesh.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Mesh Shader"),
@@ -214,7 +257,10 @@ impl TriangleRenderResources {
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("custom3d"),
-            bind_group_layouts: &[&bind_group_layout],
+            bind_group_layouts: &[
+                &bind_group_layout,
+                &texture_bind_group_layout
+            ],
             push_constant_ranges: &[],
         });
 
@@ -229,7 +275,7 @@ impl TriangleRenderResources {
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "wireframe_main",
-                targets: &[Some(color_target_state.clone())],
+                targets: &[Some(color_target_state.into())],
             }),
             primitive: wgpu::PrimitiveState {
                 polygon_mode: wgpu::PolygonMode::Line,
@@ -261,7 +307,7 @@ impl TriangleRenderResources {
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[Some(color_target_state)],
+                targets: &[Some(color_target_state.into())],
             }),
             primitive: wgpu::PrimitiveState {
                 ..Default::default()
@@ -284,7 +330,7 @@ impl TriangleRenderResources {
 
         let mut verts = Vec::new();
         for v in &pmx.verts {
-            verts.push(Vertex { pos: v.pos, nrm: v.nrm });
+            verts.push(Vertex { pos: v.pos, nrm: v.nrm , uv: v.uv});
         }
         let mut idxs = Vec::new();
         for i in &pmx.faces {
@@ -321,6 +367,7 @@ impl TriangleRenderResources {
             uniform_buffer,
             vert_buffer,
             index_buffer,
+            default_bind_group,
             pmx,
             wireframe_pipeline,
             draw_wireframe: false,
@@ -349,6 +396,7 @@ impl TriangleRenderResources {
         render_pass.set_vertex_buffer(0, self.vert_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
+        render_pass.set_bind_group(1, &self.default_bind_group, &[]);
         for (i, mat) in self.pmx.mats.iter().enumerate() {
             if self.filters[i].1 == false {
                 continue;

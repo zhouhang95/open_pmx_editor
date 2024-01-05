@@ -1,11 +1,13 @@
 struct VertexInput {
     @location(0) pos: vec3f,
     @location(1) nrm: vec3f,
+    @location(2) uv: vec2f,
 };
 
 struct VertexOut {
     @location(0) nrm: vec3f,
     @location(1) opos: vec3f,
+    @location(2) uv: vec2f,
     @builtin(position) pos: vec4f,
 };
 
@@ -18,6 +20,10 @@ struct Uniforms {
 
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
+@group(1) @binding(0)
+var t_diffuse: texture_2d<f32>;
+@group(1) @binding(1)
+var s_diffuse: sampler;
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOut {
@@ -26,12 +32,16 @@ fn vs_main(model: VertexInput) -> VertexOut {
     out.pos = uniforms.view_proj * vec4f(model.pos, 1.0);
     out.opos = model.pos;
     out.nrm = model.nrm;
+    out.uv = model.uv;
 
     return out;
 }
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
+    if uniforms.flag.z > 0.0 {
+        return textureSample(t_diffuse, s_diffuse, in.uv);
+    }
     if uniforms.flag.y > 0.0 {
         return vec4f(0.7, 0.7, 0.7, 0.0);
     }

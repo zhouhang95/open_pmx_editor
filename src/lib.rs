@@ -7,4 +7,5 @@ mod dict;
 mod custom3d;
 mod camera;
 mod grid;
+mod texture;
 pub use app::TemplateApp;
