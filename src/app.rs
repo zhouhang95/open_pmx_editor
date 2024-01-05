@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, str::FromStr};
+use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, str::FromStr, fmt::format};
 
 use egui::{TextStyle, ScrollArea, mutex::Mutex, viewport, ViewportId};
 use egui_extras::{Column, TableBuilder};
@@ -541,18 +541,76 @@ impl eframe::App for TemplateApp {
             let show_model_view = self.show_model_view.clone();
             if *show_model_view.lock() {
                 let custom3d = self.custom3d.clone();
+                let model_viewport_id = self.model_viewport_id;
                 ctx.show_viewport_deferred(
-                    self.model_viewport_id,
+                    model_viewport_id,
                     egui::ViewportBuilder::default()
                         .with_title("Model View")
                         .with_inner_size([500.0, 500.0]),
                     move |ctx, class| {
+                        if custom3d.lock().show_material_filter {
+                            let custom3d = custom3d.clone();
+                            ctx.show_viewport_deferred(
+                                egui::ViewportId::from_hash_of("deferred_viewport"),
+                                egui::ViewportBuilder::default()
+                                    .with_title("Material Filter")
+                                    .with_inner_size([200.0, 400.0]),
+                                move |ctx, class| {
+                                    let mut custom3d = custom3d.lock();
+                                    egui::CentralPanel::default().show(ctx, |ui| {
+                                        ui.horizontal(|ui| {
+                                            if ui.button("All").clicked() {
+                                                for (_, checked) in custom3d.filters.iter_mut() {
+                                                    *checked = true;
+                                                    ctx.request_repaint_of(model_viewport_id);
+                                                }
+                                            }
+                                            if ui.button("None").clicked() {
+                                                for (_, checked) in custom3d.filters.iter_mut() {
+                                                    *checked = false;
+                                                    ctx.request_repaint_of(model_viewport_id);
+                                                }
+                                            }
+                                            if ui.button("Invert").clicked() {
+                                                for (_, checked) in custom3d.filters.iter_mut() {
+                                                    *checked = !*checked;
+                                                    ctx.request_repaint_of(model_viewport_id);
+                                                }
+                                            }
+                                        });
+                                        let text_style = TextStyle::Body;
+                                        let row_height = ui.text_style_height(&text_style);
+                                        let num_rows = custom3d.filters.len();
+                                        ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                                            ui,
+                                            row_height,
+                                            num_rows,
+                                            |ui, row_range| {
+                                                ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                                    for i in row_range {
+                                                        let (name, check) = &mut custom3d.filters[i];
+                                                        if ui.checkbox(check, format!("{}: {}", i, name)).clicked() {
+                                                            ctx.request_repaint_of(model_viewport_id);
+                                                        }
+                                                    }
+                                                });
+                                            },
+                                        );
+                                    });
+                                    if ctx.input(|i| i.viewport().close_requested()) {
+                                        custom3d.show_material_filter = false;
+                                    }
+                                },
+                            );
+                        }
+
                         egui::CentralPanel::default().show(ctx, |ui| {
                             let mut custom3d = custom3d.lock();
                             ui.horizontal(|ui| {
                                 ui.checkbox(&mut custom3d.draw_flag.planer, "planer");
                                 ui.checkbox(&mut custom3d.draw_flag.wireframe, "wireframe");
                                 ui.checkbox(&mut custom3d.draw_flag.gray, "gray");
+                                ui.checkbox(&mut custom3d.show_material_filter, "filter");
                             });
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
                                 custom3d.custom_painting(ui);

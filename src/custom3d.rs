@@ -47,6 +47,8 @@ pub struct Custom3d {
     camera: Camera,
     wgpu_render_state: RenderState,
     pub draw_flag: DrawFlag,
+    pub filters: Vec<(String, bool)>,
+    pub show_material_filter: bool,
 }
 
 impl Custom3d {
@@ -67,10 +69,15 @@ impl Custom3d {
             camera: Camera::new(),
             wgpu_render_state,
             draw_flag: Default::default(),
+            filters: Vec::new(),
+            show_material_filter: false,
         }
     }
-    pub fn load_mesh(&self, pmx: Arc<Mutex<Pmx>>) {
+    pub fn load_mesh(&mut self, pmx: Arc<Mutex<Pmx>>) {
         let pmx = pmx.lock();
+        for m in &pmx.mats {
+            self.filters.push((m.name.clone(), true));
+        }
         let mut verts = Vec::new();
         for v in &pmx.verts {
             verts.push(Vertex { pos: v.pos, nrm: v.nrm });
@@ -118,6 +125,7 @@ impl Custom3d {
 struct CustomTriangleCallback {
     camera_uniform: CameraUniform,
     draw_wireframe: bool,
+    filters: Vec<(String, bool)>,
 }
 
 impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
@@ -129,7 +137,7 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
         if let Some(resources) = resources.get_mut::<TriangleRenderResources>() {
-            resources.prepare(device, queue, self.camera_uniform, self.draw_wireframe);
+            resources.prepare(device, queue, self.camera_uniform, self.draw_wireframe, self.filters.clone());
         }
         Vec::new()
     }
@@ -168,6 +176,7 @@ impl Custom3d {
             CustomTriangleCallback {
                 camera_uniform: CameraUniform::from_camera(&self.camera, self.draw_flag),
                 draw_wireframe: self.draw_flag.wireframe,
+                filters: self.filters.clone(),
             },
         ));
         ui.painter().add(egui_wgpu::Callback::new_paint_callback(
@@ -186,6 +195,7 @@ struct TriangleRenderResources {
     pmx: Pmx,
     wireframe_pipeline: wgpu::RenderPipeline,
     draw_wireframe: bool,
+    filters: Vec<(String, bool)>,
 }
 
 impl TriangleRenderResources {
@@ -315,10 +325,18 @@ impl TriangleRenderResources {
             pmx,
             wireframe_pipeline,
             draw_wireframe: false,
+            filters: Vec::new(),
         }
     }
-    fn prepare(&mut self, _device: &wgpu::Device, queue: &wgpu::Queue, camera_uniform: CameraUniform, draw_wireframe: bool) {
+    fn prepare(
+        &mut self, _device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        camera_uniform: CameraUniform,
+        draw_wireframe: bool,
+        filters: Vec<(String, bool)>,
+    ) {
         self.draw_wireframe = draw_wireframe;
+        self.filters = filters;
         // Update our uniform buffer with the angle from the UI
         queue.write_buffer(
             &self.uniform_buffer,
@@ -333,6 +351,9 @@ impl TriangleRenderResources {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         for (i, mat) in self.pmx.mats.iter().enumerate() {
+            if self.filters[i].1 == false {
+                continue;
+            }
             if mat.diffuse.w == 0.0 {
                 continue;
             }
