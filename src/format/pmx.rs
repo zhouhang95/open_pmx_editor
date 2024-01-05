@@ -341,21 +341,22 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
-    pub fn load_tex(&self) -> Vec<Option<RgbaImage>> {
-        let mut res = Vec::new();
-        for tex in &self.texs {
+    pub fn load_tex(&self) -> HashMap<i32, RgbaImage> {
+        let mut res: HashMap<i32, RgbaImage> = HashMap::new();
+        for (i, tex) in self.texs.iter().enumerate() {
             if let Ok(mut reader) = ImageReader::open("assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/".to_string() + tex) {
                 let tl = tex.to_lowercase();
                 if tl.ends_with("sph") || tl.ends_with("spa") {
                     reader.set_format(ImageFormat::Bmp);
                 }
                 let img = reader.decode().unwrap().into_rgba8();
-                res.push(Some(img));
+                res.insert(i as _, img);
             } else {
-                eprintln!("tex: {} miss", tex);
-                res.push(None);
+                eprintln!("tex {}: {} miss", i, tex);
             }
         }
+        let default_image = RgbaImage::from_pixel(64, 64, Rgba::<u8>([255; 4]));
+        res.insert(-1, default_image);
         res
     }
     fn read_string(file: &mut Cursor<Vec<u8>>, utf8: bool) -> String {
