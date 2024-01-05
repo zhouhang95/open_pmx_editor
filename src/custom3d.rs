@@ -9,6 +9,7 @@ use eframe::{
 use image::{io::Reader as ImageReader, RgbaImage};
 use once_cell::sync::Lazy;
 
+#[allow(dead_code)]
 pub const IMAGE_TOONS: Lazy<Vec<RgbaImage>> = Lazy::new(|| {
     let mut res = Vec::new();
     for i in 1..=10 {
@@ -42,6 +43,7 @@ pub struct DrawFlag {
     pub planer: bool,
     pub wireframe: bool,
     pub gray: bool,
+    pub use_texture: bool,
 }
 pub struct Custom3d {
     camera: Camera,
@@ -78,16 +80,6 @@ impl Custom3d {
         for m in &pmx.mats {
             self.filters.push((m.name.clone(), true));
         }
-        let mut verts = Vec::new();
-        for v in &pmx.verts {
-            verts.push(Vertex { pos: v.pos, nrm: v.nrm });
-        }
-        let mut idxs = Vec::new();
-        for i in &pmx.faces {
-            idxs.push(i[0]);
-            idxs.push(i[1]);
-            idxs.push(i[2]);
-        }
         self.wgpu_render_state
             .renderer
             .write()
@@ -95,8 +87,6 @@ impl Custom3d {
             .insert(TriangleRenderResources::new(
                 self.wgpu_render_state.device.clone(),
                 self.wgpu_render_state.target_format.into(),
-                verts,
-                idxs,
                 pmx.clone(),
             ));
     }
@@ -202,8 +192,6 @@ impl TriangleRenderResources {
     pub fn new(
         device: Arc<wgpu::Device>,
         color_target_state: wgpu::ColorTargetState,
-        verts: Vec<Vertex>,
-        idxs: Vec<u32>,
         pmx: Pmx,
     ) -> Self {
         let shader_path = Path::new("shader/mesh.wgsl");
@@ -293,6 +281,17 @@ impl TriangleRenderResources {
             contents: bytemuck::cast_slice(&[CameraUniform::new()]),
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
         });
+
+        let mut verts = Vec::new();
+        for v in &pmx.verts {
+            verts.push(Vertex { pos: v.pos, nrm: v.nrm });
+        }
+        let mut idxs = Vec::new();
+        for i in &pmx.faces {
+            idxs.push(i[0]);
+            idxs.push(i[1]);
+            idxs.push(i[2]);
+        }
 
         let vert_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d vert"),

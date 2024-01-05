@@ -47,7 +47,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Open MMD Editor",
         native_options,
-        Box::new(|cc| Box::new(eframe_template::TemplateApp::new(cc))),
+        Box::new(|cc| Box::new(open_pmx_editor::TemplateApp::new(cc))),
     )
 }
 

@@ -150,7 +150,12 @@ impl CameraUniform {
             view_proj,
             view,
             proj,
-            planer: vec4(if dw.planer {1.0} else {0.0}, if dw.gray {1.0} else {0.0}, 0.0, 0.0),
+            planer: vec4(
+                if dw.planer {1.0} else {0.0},
+                if dw.gray {1.0} else {0.0},
+                if dw.use_texture {1.0} else {0.0},
+                0.0,
+            ),
         }
     }
 }

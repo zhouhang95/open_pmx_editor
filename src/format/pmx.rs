@@ -341,7 +341,7 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
-    pub fn load_tex(&self) -> Vec<RgbaImage> {
+    pub fn load_tex(&self) -> Vec<Option<RgbaImage>> {
         let mut res = Vec::new();
         for tex in &self.texs {
             if let Ok(mut reader) = ImageReader::open("assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/".to_string() + tex) {
@@ -350,10 +350,10 @@ impl Pmx {
                     reader.set_format(ImageFormat::Bmp);
                 }
                 let img = reader.decode().unwrap().into_rgba8();
-                res.push(img);
+                res.push(Some(img));
             } else {
                 eprintln!("tex: {} miss", tex);
-                res.push(RgbaImage::from_pixel(64, 64, Rgba::<u8>([178, 178, 178, 255])));
+                res.push(None);
             }
         }
         res

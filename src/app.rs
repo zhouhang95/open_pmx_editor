@@ -610,6 +610,7 @@ impl eframe::App for TemplateApp {
                                 ui.checkbox(&mut custom3d.draw_flag.planer, "planer");
                                 ui.checkbox(&mut custom3d.draw_flag.wireframe, "wireframe");
                                 ui.checkbox(&mut custom3d.draw_flag.gray, "gray");
+                                ui.checkbox(&mut custom3d.draw_flag.use_texture, "texture");
                                 ui.checkbox(&mut custom3d.show_material_filter, "filter");
                             });
                             egui::Frame::canvas(ui.style()).show(ui, |ui| {
