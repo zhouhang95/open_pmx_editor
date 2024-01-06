@@ -367,7 +367,7 @@ impl TriangleRenderResources {
         });
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d"),
-            contents: bytemuck::cast_slice(&[CameraUniform::new()]),
+            contents: bytemuck::cast_slice(&[CameraUniform::default()]),
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
         });
 

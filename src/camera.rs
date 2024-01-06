@@ -121,11 +121,12 @@ impl Camera {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct CameraUniform {
     view_proj: Mat4,
     view: Mat4,
     proj: Mat4,
+    cam_real_pos: Vec4,
     planer: Vec4,
 }
 
@@ -133,15 +134,6 @@ unsafe impl bytemuck::Pod for CameraUniform {}
 unsafe impl bytemuck::Zeroable for CameraUniform {}
 
 impl CameraUniform {
-    pub fn new() -> Self {
-        Self {
-            view_proj: Mat4::IDENTITY,
-            view: Mat4::IDENTITY,
-            proj: Mat4::IDENTITY,
-            planer: Vec4::ZERO,
-        }
-    }
-
     pub fn from_camera(camera: &Camera, dw: DrawFlag) -> Self {
         let proj = camera.proj();
         let view = camera.view();
@@ -150,6 +142,7 @@ impl CameraUniform {
             view_proj,
             view,
             proj,
+            cam_real_pos: camera.real_pos().extend(1.0),
             planer: vec4(
                 if dw.planer {1.0} else {0.0},
                 if dw.gray {1.0} else {0.0},

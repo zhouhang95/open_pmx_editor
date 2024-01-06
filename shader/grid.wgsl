@@ -12,6 +12,7 @@ struct Uniforms {
     view_proj: mat4x4f,
     view: mat4x4f,
     proj: mat4x4f,
+    cam_real_pos: vec4f,
     planer: vec4f,
 };
 

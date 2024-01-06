@@ -15,6 +15,7 @@ struct Uniforms {
     view_proj: mat4x4f,
     view: mat4x4f,
     proj: mat4x4f,
+    cam_real_pos: vec4f,
     flag: vec4f,
 };
 
@@ -48,7 +49,12 @@ fn vs_main(model: VertexInput) -> VertexOut {
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
     if uniforms.flag.z > 0.0 {
-        let light = mat_uniforms.diffuse.xyz * 0.5 + mat_uniforms.ambient.xyz;
+        let view_dir = normalize(uniforms.cam_real_pos.xyz - in.opos);
+        let ligth_dir = normalize(vec3f(1.0, 1.0, 1.0));
+        let halfway = normalize(view_dir + ligth_dir);
+        let nrm = normalize(in.nrm);
+        let spec = pow(max(dot(nrm, halfway), 0.0), mat_uniforms.specular.w);
+        let light = mat_uniforms.diffuse.xyz * 0.5 + mat_uniforms.ambient.xyz + mat_uniforms.specular.xyz * spec;
         return textureSample(t_diffuse, s_diffuse, in.uv) * vec4f(light, mat_uniforms.diffuse.w);
     }
     if uniforms.flag.y > 0.0 {
