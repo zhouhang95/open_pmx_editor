@@ -43,16 +43,16 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
         return textureSample(t_diffuse, s_diffuse, in.uv);
     }
     if uniforms.flag.y > 0.0 {
-        return vec4f(0.7, 0.7, 0.7, 0.0);
+        return vec4f(0.7, 0.7, 0.7, 1.0);
     }
     var planer_nrm_os = -normalize(cross(dpdx(in.opos), dpdy(in.opos)));
     var nrm_os = mix(in.nrm, planer_nrm_os, uniforms.flag.x);
     var nrm_cs = uniforms.view * vec4f(nrm_os, 0.0);
     var ins = mix(0.4, 1.0, saturate(nrm_cs.z));
-    return vec4f(ins, ins, ins, 0.0);
+    return vec4f(ins, ins, ins, 1.0);
 }
 
 @fragment
 fn wireframe_main(in: VertexOut) -> @location(0) vec4f {
-    return vec4f(0.22, 0.22, 0.295, 0.0);
+    return vec4f(0.22, 0.22, 0.295, 1.0);
 }

@@ -3,7 +3,7 @@ use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
-    egui_wgpu::{self, wgpu, RenderState},
+    egui_wgpu::{self, wgpu, RenderState}, wgpu::{ColorTargetState, ColorWrites, BlendState},
 };
 
 use image::{io::Reader as ImageReader, RgbaImage};
@@ -312,7 +312,11 @@ impl TriangleRenderResources {
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[Some(color_target_state.into())],
+                targets: &[Some(ColorTargetState {
+                    format: color_target_state,
+                    blend: Some(BlendState::ALPHA_BLENDING),
+                    write_mask: ColorWrites::ALL,
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 ..Default::default()
