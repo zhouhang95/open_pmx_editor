@@ -93,8 +93,7 @@ pub struct Mat {
     pub name: String,
     pub name_en: String,
     pub diffuse: Vec4,
-    pub specular: Vec3,
-    pub specular_strength: f32,
+    pub specular: Vec4,
     pub ambient: Vec3,
     pub draw_flag: DrawFlags,
     pub edge_color: Vec4,
@@ -112,8 +111,7 @@ impl Default for Mat {
             name: "Mat".to_string(),
             name_en: "Mat".to_string(),
             diffuse: vec4(0.4, 0.4, 0.4, 1.0),
-            specular: Vec3::splat(0.4),
-            specular_strength: 5.0, 
+            specular: vec4(0.4, 0.4, 0.4, 5.0),
             ambient: Vec3::splat(0.2),
             draw_flag: DrawFlags::NO_CULL,
             edge_color: vec4(0.0, 0.0, 0.0, 1.0), 
@@ -449,8 +447,7 @@ impl Pmx {
             let name = Pmx::read_string(file, utf8);
             let name_en = Pmx::read_string(file, utf8);
             let diffuse = read_float4(file);
-            let specular = read_float3(file);
-            let specular_strength = file.read_f32::<LE>().unwrap();
+            let specular = read_float4(file);
             let ambient = read_float3(file);
             let draw_flag = DrawFlags::from_bits(file.read_u8().unwrap()).unwrap();
             let edge_color = read_float4(file);
@@ -477,7 +474,6 @@ impl Pmx {
                 name_en,
                 diffuse,
                 specular,
-                specular_strength,
                 ambient,
                 draw_flag,
                 edge_color,

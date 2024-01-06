@@ -24,6 +24,7 @@ enum Page {
 pub struct TemplateApp {
     vmd_motion: Option<Motion>,
     pmx_data: Option<Arc<Mutex<Pmx>>>,
+    pmx_mat_cur_value: usize,
     pmx_bone_cur_value: usize,
     pmx_morph_cur_value: usize,
     page: Page,
@@ -83,8 +84,9 @@ impl TemplateApp {
             page: Page::VmdBone,
             pmx_data: None,
             pmx_bone_cur_value: 0,
+            pmx_mat_cur_value: 0,
             pmx_morph_cur_value: 0,
-            show_model_view: Arc::new(Mutex::new(true)),
+            show_model_view: Arc::new(Mutex::new(false)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
             model_viewport_id: egui::ViewportId::from_hash_of("model_viewport"),
         };
@@ -103,7 +105,7 @@ impl TemplateApp {
             pmx_data.lock().right_hand();
             pmx_data.lock().scale(0.08);
             self.pmx_data = Some(pmx_data.clone());
-            self.page = Page::Info;
+            self.page = Page::Material;
             self.custom3d.lock().load_mesh(pmx_data);
         }
     }
@@ -258,7 +260,7 @@ impl eframe::App for TemplateApp {
             });
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.page, Page::Info, "Info");
-                // ui.selectable_value(&mut self.page, Page::Material, "Material");
+                ui.selectable_value(&mut self.page, Page::Material, "Material");
                 ui.selectable_value(&mut self.page, Page::Bone, "Bone");
                 ui.selectable_value(&mut self.page, Page::Morph, "Morph");
                 // ui.selectable_value(&mut self.page, Page::Frame, "Frame");
@@ -286,13 +288,10 @@ impl eframe::App for TemplateApp {
                         ui.heading(text);
                     });
                     ui.separator();
-                    let text_style = TextStyle::Body;
-                    let row_height = ui.text_style_height(&text_style);
-                    let num_rows = bone_names.len();
                     ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
                         ui,
-                        row_height,
-                        num_rows,
+                        ui.text_style_height(&TextStyle::Body),
+                        bone_names.len(),
                         |ui, row_range| {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
@@ -318,13 +317,10 @@ impl eframe::App for TemplateApp {
                         ui.heading(text);
                     });
                     ui.separator();
-                    let text_style = TextStyle::Body;
-                    let row_height = ui.text_style_height(&text_style);
-                    let num_rows = morph_names.len();
                     ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
                         ui,
-                        row_height,
-                        num_rows,
+                        ui.text_style_height(&TextStyle::Body),
+                        morph_names.len(),
                         |ui, row_range| {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
@@ -339,7 +335,6 @@ impl eframe::App for TemplateApp {
                     let mut names = Vec::new();
                     if let Some(m) = &self.pmx_data {
                         let m = m.lock();
-                        ui.heading(&m.name);
                         for b in &m.bones {
                             names.push(b.name.clone());
                         }
@@ -349,13 +344,10 @@ impl eframe::App for TemplateApp {
                         ui.heading(text);
                     });
                     ui.separator();
-                    let text_style = TextStyle::Body;
-                    let row_height = ui.text_style_height(&text_style);
-                    let num_rows = names.len();
                     ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
                         ui,
-                        row_height,
-                        num_rows,
+                        ui.text_style_height(&TextStyle::Body),
+                        names.len(),
                         |ui, row_range| {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
@@ -366,11 +358,37 @@ impl eframe::App for TemplateApp {
                         },
                     );
                 },
+                Page::Material => {
+                    let mut names = Vec::new();
+                    if let Some(m) = &self.pmx_data {
+                        let m = m.lock();
+                        for mat in &m.mats {
+                            names.push(mat.name.clone());
+                        }
+                    }
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", names.len());
+                        ui.heading(text);
+                    });
+                    ui.separator();
+                    ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
+                        ui,
+                        ui.text_style_height(&TextStyle::Body),
+                        names.len(),
+                        |ui, row_range| {
+                            ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
+                                for row in row_range {
+                                    let text = format!("{:3}: {}", row, names[row]);
+                                    ui.selectable_value(&mut self.pmx_mat_cur_value, row, text);
+                                }
+                            });
+                        },
+                    );
+                },
                 Page::Morph => {
                     let mut names = Vec::new();
                     if let Some(m) = &self.pmx_data {
                         let m = m.lock();
-                        ui.heading(&m.name);
                         for morph in &m.morphs {
                             names.push(morph.name.clone());
                         }
@@ -380,13 +398,10 @@ impl eframe::App for TemplateApp {
                         ui.heading(text);
                     });
                     ui.separator();
-                    let text_style = TextStyle::Body;
-                    let row_height = ui.text_style_height(&text_style);
-                    let num_rows = names.len();
                     ScrollArea::vertical().auto_shrink([false; 2]).show_rows(
                         ui,
-                        row_height,
-                        num_rows,
+                        ui.text_style_height(&TextStyle::Body),
+                        names.len(),
                         |ui, row_range| {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
@@ -407,6 +422,18 @@ impl eframe::App for TemplateApp {
                     let m = m.lock();
                     ui.heading(&m.name);
                     ui.label(&m.comment);
+                }
+            },
+            Page::Material => {
+                if let Some(m) = &self.pmx_data {
+                    let m = m.lock();
+                    let mat = &m.mats[self.pmx_mat_cur_value];
+                    ui.heading(format!("Name: {}", mat.name));
+                    ui.label(format!("NameEn: {}", mat.name_en));
+                    ui.label(format!("Comment: {}", mat.comment));
+                    ui.label(format!("Diffuse: {}", mat.diffuse.to_string()));
+                    ui.label(format!("Specular: {}", mat.specular.to_string()));
+                    ui.label(format!("Ambient: {}", mat.ambient.to_string()));
                 }
             },
             Page::VmdBone => {

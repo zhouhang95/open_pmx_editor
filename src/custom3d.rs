@@ -248,7 +248,7 @@ impl TriangleRenderResources {
                 label: Some("mat uniform"),
                 contents: bytemuck::cast_slice(&[MatUniform {
                     diffuse: mat.diffuse,
-                    specular: mat.specular.extend(mat.specular_strength),
+                    specular: mat.specular,
                     ambient: mat.ambient.extend(0.0),
                 }]),
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,

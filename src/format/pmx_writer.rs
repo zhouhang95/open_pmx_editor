@@ -281,8 +281,7 @@ impl Pmx {
             Self::write_string(file, &m.name);
             Self::write_string(file, &m.name_en);
             write_float4(file, m.diffuse);
-            write_float3(file, m.specular);
-            file.write_f32::<LE>(m.specular_strength).unwrap();
+            write_float4(file, m.specular);
             write_float3(file, m.ambient);
             file.write_u8(m.draw_flag.bits()).unwrap();
             write_float4(file, m.edge_color);
