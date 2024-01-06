@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc, collections::HashMap};
+use std::{path::Path, sync::Arc};
 use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
@@ -182,7 +182,7 @@ struct TriangleRenderResources {
     uniform_buffer: wgpu::Buffer,
     vert_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    tex_bind_groups: HashMap<i32, wgpu::BindGroup>,
+    mat_bind_groups: Vec<wgpu::BindGroup>,
     pmx: Pmx,
     wireframe_pipeline: wgpu::RenderPipeline,
     draw_wireframe: bool,
@@ -221,25 +221,25 @@ impl TriangleRenderResources {
         });
         
         let tex_image = pmx.load_tex();
-        let mut tex_bind_groups = HashMap::new();
-        for (i, img) in &tex_image {
-            // let default_image = RgbaImage::from_pixel(64, 64, Rgba::<u8>([255; 4]));
-            let default_texture = TextureWrapper::from_image(&device, &queue, img, None);
-            let default_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let mut mat_bind_groups = Vec::new();
+        for mat in &pmx.mats {
+            let tex_index = if tex_image.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
+            let texture = TextureWrapper::from_image(&device, &queue, &tex_image[&tex_index], None);
+            let mat_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &texture_bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&default_texture.view),
+                        resource: wgpu::BindingResource::TextureView(&texture.view),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&default_texture.sampler),
+                        resource: wgpu::BindingResource::Sampler(&texture.sampler),
                     },
                 ],
-                label: Some("default_bind_group"),
+                label: Some("mat_bind_group"),
             });
-            tex_bind_groups.insert(*i, default_bind_group);
+            mat_bind_groups.push(mat_bind_group);
         }
 
         let shader_path = Path::new("shader/mesh.wgsl");
@@ -376,7 +376,7 @@ impl TriangleRenderResources {
             uniform_buffer,
             vert_buffer,
             index_buffer,
-            tex_bind_groups,
+            mat_bind_groups,
             pmx,
             wireframe_pipeline,
             draw_wireframe: false,
@@ -406,8 +406,7 @@ impl TriangleRenderResources {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         for (i, mat) in self.pmx.mats.iter().enumerate() {
-            let tex_index = if self.tex_bind_groups.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
-            render_pass.set_bind_group(1, &self.tex_bind_groups[&tex_index], &[]);
+            render_pass.set_bind_group(1, &self.mat_bind_groups[i], &[]);
             if self.filters[i].1 == false {
                 continue;
             }
