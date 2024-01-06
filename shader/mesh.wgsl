@@ -18,12 +18,20 @@ struct Uniforms {
     flag: vec4f,
 };
 
+struct MatUniforms {
+    diffuse: vec4f,
+    specular: vec4f,
+    ambient: vec4f,
+};
+
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 @group(1) @binding(0)
 var t_diffuse: texture_2d<f32>;
 @group(1) @binding(1)
 var s_diffuse: sampler;
+@group(1) @binding(2)
+var<uniform> mat_uniforms: MatUniforms;
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOut {
@@ -40,7 +48,8 @@ fn vs_main(model: VertexInput) -> VertexOut {
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4f {
     if uniforms.flag.z > 0.0 {
-        return textureSample(t_diffuse, s_diffuse, in.uv);
+        let light = mat_uniforms.diffuse.xyz * 0.5 + mat_uniforms.ambient.xyz;
+        return textureSample(t_diffuse, s_diffuse, in.uv) * vec4f(light, mat_uniforms.diffuse.w);
     }
     if uniforms.flag.y > 0.0 {
         return vec4f(0.7, 0.7, 0.7, 1.0);

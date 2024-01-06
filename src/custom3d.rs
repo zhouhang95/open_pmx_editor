@@ -46,6 +46,17 @@ pub struct DrawFlag {
     pub gray: bool,
     pub use_texture: bool,
 }
+
+#[allow(dead_code)]
+#[derive(Default, Clone, Copy)]
+struct MatUniform {
+    pub diffuse: Vec4,
+    pub specular: Vec4,
+    pub ambient: Vec4,
+}
+unsafe impl bytemuck::Pod for MatUniform {}
+unsafe impl bytemuck::Zeroable for MatUniform {}
+
 pub struct Custom3d {
     camera: Camera,
     wgpu_render_state: RenderState,
@@ -216,6 +227,16 @@ impl TriangleRenderResources {
                     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
             label: Some("texture_bind_group_layout"),
         });
@@ -223,6 +244,15 @@ impl TriangleRenderResources {
         let tex_image = pmx.load_tex();
         let mut mat_bind_groups = Vec::new();
         for mat in &pmx.mats {
+            let mat_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("mat uniform"),
+                contents: bytemuck::cast_slice(&[MatUniform {
+                    diffuse: mat.diffuse,
+                    specular: mat.specular.extend(mat.specular_strength),
+                    ambient: mat.ambient.extend(0.0),
+                }]),
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
+            });
             let tex_index = if tex_image.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
             let texture = TextureWrapper::from_image(&device, &queue, &tex_image[&tex_index], None);
             let mat_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -235,6 +265,10 @@ impl TriangleRenderResources {
                     wgpu::BindGroupEntry {
                         binding: 1,
                         resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: mat_uniform_buffer.as_entire_binding(),
                     },
                 ],
                 label: Some("mat_bind_group"),
