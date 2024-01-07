@@ -429,11 +429,37 @@ impl eframe::App for TemplateApp {
                     let m = m.lock();
                     let mat = &m.mats[self.pmx_mat_cur_value];
                     ui.heading(format!("Name: {}", mat.name));
+                    ui.label(format!("Associated Face Count: {}", mat.associated_face_count));
                     ui.label(format!("NameEn: {}", mat.name_en));
                     ui.label(format!("Comment: {}", mat.comment));
-                    ui.label(format!("Diffuse: {}", mat.diffuse.to_string()));
-                    ui.label(format!("Specular: {}", mat.specular.to_string()));
-                    ui.label(format!("Ambient: {}", mat.ambient.to_string()));
+                    ui.label(format!("Diffuse: {}", mat.diffuse));
+                    ui.label(format!("Specular: {}", mat.specular));
+                    ui.label(format!("Ambient: {}", mat.ambient));
+                    ui.label(format!("Edge Color: {}", mat.edge_color));
+                    ui.label(format!("Edge Scale: {}", mat.edge_scale));
+                    if mat.tex_index >= 0 {
+                        ui.label(format!("Tex: {}", m.texs[mat.tex_index as usize]));
+                    } else {
+                        ui.label("Tex: None");
+                    }
+                    if mat.env_index >= 0 {
+                        ui.label(format!("MatCap Tex: {}", m.texs[mat.env_index as usize]));
+                    } else {
+                        ui.label("MatCap Tex: None");
+                    }
+                    ui.label(format!("Matcap Blend Mode: {:?}", mat.env_blend_mode));
+                    match mat.toon {
+                        crate::format::pmx::Toon::Tex(i) => {
+                            if i >= 0 {
+                                ui.label(format!("Toon Tex: {}", m.texs[i as usize]));
+                            } else {
+                                ui.label("Toon Tex: None");
+                            }
+                        },
+                        crate::format::pmx::Toon::Inner(i) => {
+                            ui.label(format!("Toon Tex: toon{:02}.bmp", i));
+                        },
+                    }
                 }
             },
             Page::VmdBone => {

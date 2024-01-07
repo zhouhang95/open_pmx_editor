@@ -67,7 +67,7 @@ pub enum Toon {
     Inner(u8),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum BlendMode {
     Disable,
     Mul,
