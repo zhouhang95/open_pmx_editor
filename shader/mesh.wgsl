@@ -54,8 +54,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
         let halfway = normalize(view_dir + ligth_dir);
         let nrm = normalize(in.nrm);
         let spec = pow(max(dot(nrm, halfway), 0.0), mat_uniforms.specular.w);
-        let light = mat_uniforms.diffuse.xyz * 0.5 + mat_uniforms.ambient.xyz + mat_uniforms.specular.xyz * spec;
-        return textureSample(t_diffuse, s_diffuse, in.uv) * vec4f(light, mat_uniforms.diffuse.w);
+        let light = (mat_uniforms.diffuse.xyz + mat_uniforms.specular.xyz * spec) * 0.5 + mat_uniforms.ambient.xyz;
+        return textureSample(t_diffuse, s_diffuse, in.uv) * vec4f(saturate(light), mat_uniforms.diffuse.w);
     }
     if uniforms.flag.y > 0.0 {
         return vec4f(0.7, 0.7, 0.7, 1.0);
