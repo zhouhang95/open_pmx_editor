@@ -1,4 +1,4 @@
-use std::{path::Path, sync::Arc};
+use std::{path::Path, sync::Arc, collections::HashMap};
 use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
@@ -241,8 +241,13 @@ impl TriangleRenderResources {
             label: Some("texture_bind_group_layout"),
         });
         
-        let tex_image = pmx.load_tex();
-        let mut mat_bind_groups = Vec::new();
+        let tex_images = pmx.load_tex();
+        let mut texture_wrappers = HashMap::new();
+        for (i, tex_image) in &tex_images {
+            let texture = TextureWrapper::from_image(&device, &queue, tex_image, None);
+            texture_wrappers.insert(*i, texture);
+        }
+            let mut mat_bind_groups = Vec::new();
         for mat in &pmx.mats {
             let mat_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("mat uniform"),
@@ -253,8 +258,8 @@ impl TriangleRenderResources {
                 }]),
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::UNIFORM,
             });
-            let tex_index = if tex_image.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
-            let texture = TextureWrapper::from_image(&device, &queue, &tex_image[&tex_index], None);
+            let tex_index = if tex_images.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
+            let texture = &texture_wrappers[&tex_index];
             let mat_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &texture_bind_group_layout,
                 entries: &[
