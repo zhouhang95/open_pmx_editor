@@ -360,10 +360,12 @@ impl eframe::App for TemplateApp {
                 },
                 Page::Material => {
                     let mut names = Vec::new();
+                    let mut alphas = Vec::new();
                     if let Some(m) = &self.pmx_data {
                         let m = m.lock();
                         for mat in &m.mats {
                             names.push(mat.name.clone());
+                            alphas.push(if mat.diffuse.w == 0.0 { "◻" } else { "◼" });
                         }
                     }
                     ui.horizontal(|ui| {
@@ -378,7 +380,7 @@ impl eframe::App for TemplateApp {
                         |ui, row_range| {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
-                                    let text = format!("{:3}: {}", row, names[row]);
+                                    let text = format!("{}{:3}: {}", alphas[row], row, names[row]);
                                     ui.selectable_value(&mut self.pmx_mat_cur_value, row, text);
                                 }
                             });
