@@ -237,6 +237,22 @@ impl TriangleRenderResources {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
             ],
             label: Some("texture_bind_group_layout"),
         });
@@ -247,7 +263,11 @@ impl TriangleRenderResources {
             let texture = TextureWrapper::from_image(&device, &queue, tex_image, None);
             texture_wrappers.insert(*i, texture);
         }
-            let mut mat_bind_groups = Vec::new();
+        let mut toon_texture_wrappers = Vec::new();
+        for tex_image in IMAGE_TOONS.iter() {
+            toon_texture_wrappers.push(TextureWrapper::from_image(&device, &queue, tex_image, None));
+        }
+        let mut mat_bind_groups = Vec::new();
         for mat in &pmx.mats {
             let mat_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("mat uniform"),
@@ -260,6 +280,15 @@ impl TriangleRenderResources {
             });
             let tex_index = if tex_images.contains_key(&mat.tex_index) { mat.tex_index } else { -1 };
             let texture = &texture_wrappers[&tex_index];
+            let toon_texture = match mat.toon {
+                crate::format::pmx::Toon::Tex(i) => {
+                    let tex_index = if tex_images.contains_key(&i) { i } else { -1 };
+                    &texture_wrappers[&tex_index]
+                },
+                crate::format::pmx::Toon::Inner(i) => {
+                    &toon_texture_wrappers[i as usize]
+                },
+            };
             let mat_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 layout: &texture_bind_group_layout,
                 entries: &[
@@ -274,6 +303,14 @@ impl TriangleRenderResources {
                     wgpu::BindGroupEntry {
                         binding: 2,
                         resource: mat_uniform_buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: wgpu::BindingResource::TextureView(&toon_texture.view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 4,
+                        resource: wgpu::BindingResource::Sampler(&toon_texture.sampler),
                     },
                 ],
                 label: Some("mat_bind_group"),

@@ -33,6 +33,10 @@ var t_diffuse: texture_2d<f32>;
 var s_diffuse: sampler;
 @group(1) @binding(2)
 var<uniform> mat_uniforms: MatUniforms;
+@group(1) @binding(3)
+var t_toon: texture_2d<f32>;
+@group(1) @binding(4)
+var s_toon: sampler;
 
 @vertex
 fn vs_main(model: VertexInput) -> VertexOut {
@@ -53,8 +57,10 @@ fn fs_main(in: VertexOut) -> @location(0) vec4f {
         let ligth_dir = normalize(vec3f(1.0, 1.0, 1.0));
         let halfway = normalize(view_dir + ligth_dir);
         let nrm = normalize(in.nrm);
+        let half_lambert = dot(nrm, ligth_dir) * 0.5 + 0.5;
+        let toon = textureSample(t_toon, s_toon, vec2f(0.5, 1.0 - half_lambert)).xyz;
         let spec = pow(max(dot(nrm, halfway), 0.0), mat_uniforms.specular.w);
-        let light = (mat_uniforms.diffuse.xyz + mat_uniforms.specular.xyz * spec) * 0.5 + mat_uniforms.ambient.xyz;
+        let light = (mat_uniforms.diffuse.xyz * toon + mat_uniforms.specular.xyz * spec) * 0.5 + mat_uniforms.ambient.xyz;
         return textureSample(t_diffuse, s_diffuse, in.uv) * vec4f(saturate(light), mat_uniforms.diffuse.w);
     }
     if uniforms.flag.y > 0.0 {
