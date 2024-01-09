@@ -3,7 +3,7 @@ use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
     egui_wgpu::wgpu::util::DeviceExt,
-    egui_wgpu::{self, wgpu, RenderState}, wgpu::{ColorTargetState, ColorWrites, BlendState},
+    egui_wgpu::{self, wgpu, RenderState}, wgpu::{ColorTargetState, ColorWrites, BlendState, Face},
 };
 
 use image::{io::Reader as ImageReader, RgbaImage};
@@ -20,7 +20,7 @@ pub const IMAGE_TOONS: Lazy<Vec<RgbaImage>> = Lazy::new(|| {
     res
 });
 
-use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::Pmx, texture::TextureWrapper};
+use crate::{camera::{Camera, CameraUniform}, grid::{ GridRenderResources, CustomGridCallback}, format::pmx::{Pmx, DrawFlags}, texture::TextureWrapper};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -189,6 +189,7 @@ impl Custom3d {
 
 struct TriangleRenderResources {
     pipeline: wgpu::RenderPipeline,
+    cull_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
     vert_buffer: wgpu::Buffer,
@@ -407,6 +408,37 @@ impl TriangleRenderResources {
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
         });
+        let cull_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("mesh_pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[VERTEX_BUFFER_LAYOUT],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[Some(ColorTargetState {
+                    format: color_target_state,
+                    blend: Some(BlendState::ALPHA_BLENDING),
+                    write_mask: ColorWrites::ALL,
+                })],
+            }),
+            primitive: wgpu::PrimitiveState {
+                cull_mode: Some(Face::Back),
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::LessEqual,
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+        });
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d"),
             contents: bytemuck::cast_slice(&[CameraUniform::default()]),
@@ -448,6 +480,7 @@ impl TriangleRenderResources {
         });
         Self {
             pipeline,
+            cull_pipeline,
             bind_group,
             uniform_buffer,
             vert_buffer,
@@ -495,7 +528,11 @@ impl TriangleRenderResources {
             }
             let face_count = mat.associated_face_count;
             let indices = (start_index * 3)..(start_index * 3 + face_count * 3);
-            render_pass.set_pipeline(&self.pipeline);
+            if mat.draw_flag.contains(DrawFlags::NO_CULL) {
+                render_pass.set_pipeline(&self.pipeline);
+            } else {
+                render_pass.set_pipeline(&self.cull_pipeline);
+            }
             render_pass.draw_indexed(indices.clone(), 0, 0..1);
             if self.draw_wireframe {
                 render_pass.set_pipeline(&self.wireframe_pipeline);
