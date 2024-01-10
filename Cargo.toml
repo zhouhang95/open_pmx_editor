@@ -7,9 +7,9 @@ rust-version = "1.65"
 
 
 [dependencies]
-egui = "0.24.0"
-egui_extras = "0.24.0"
-eframe = { version = "0.24.0", default-features = false, features = [
+egui = "0.25"
+egui_extras = "0.25"
+eframe = { version = "0.25", default-features = false, features = [
     "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
 ] }
 log = "0.4"
