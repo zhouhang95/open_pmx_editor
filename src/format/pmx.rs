@@ -76,6 +76,7 @@ pub enum BlendMode {
 }
 
 bitflags! {
+    #[derive(Clone, Copy)]
     pub struct DrawFlags: u8 {
         const NO_CULL         = 0b00000001;
         const GROUND_SHADOW   = 0b00000010;
@@ -128,6 +129,7 @@ impl Default for Mat {
 
 
 bitflags! {
+    #[derive(Clone, Copy)]
     pub struct BoneFlags: u16 {
         const INDEXED_TAIL_BONE     = 0b0000000000000001;
         const ROTATABLE            = 0b0000000000000010;

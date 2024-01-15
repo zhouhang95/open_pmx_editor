@@ -507,7 +507,8 @@ impl eframe::App for TemplateApp {
                         });
                     })
                     .body(|body|  {
-                        body.rows(text_height, bone_cur_keyframe.len(), |row_index, mut row| {
+                        body.rows(text_height, bone_cur_keyframe.len(), |mut row| {
+                            let row_index = row.index();
                             row.col(|ui| {
                                 ui.label(row_index.to_string());
                             });
@@ -565,7 +566,8 @@ impl eframe::App for TemplateApp {
                         });
                     })
                     .body(|body|  {
-                        body.rows(text_height, morph_cur_keyframe.len(), |row_index, mut row| {
+                        body.rows(text_height, morph_cur_keyframe.len(), |mut row| {
+                            let row_index = row.index();
                             row.col(|ui| {
                                 ui.label(row_index.to_string());
                             });
