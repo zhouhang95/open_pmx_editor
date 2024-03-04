@@ -2,8 +2,8 @@ use std::{path::Path, sync::Arc, collections::HashMap};
 use egui::mutex::Mutex;
 use glam::*;
 use eframe::{
-    egui_wgpu::wgpu::util::DeviceExt,
-    egui_wgpu::{self, wgpu, RenderState}, wgpu::{ColorTargetState, ColorWrites, BlendState, Face},
+    egui_wgpu::{self, wgpu::{self, util::DeviceExt}, RenderState, ScreenDescriptor},
+    wgpu::{BlendState, ColorTargetState, ColorWrites, Face},
 };
 
 use image::{io::Reader as ImageReader, RgbaImage};
@@ -134,6 +134,7 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         &self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
+        _screen_descriptor: &ScreenDescriptor,
         _egui_encoder: &mut wgpu::CommandEncoder,
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
@@ -168,7 +169,7 @@ impl Custom3d {
             } else {
                 self.camera.orbit(response.drag_delta().x, response.drag_delta().y);
             }
-            let scroll_delta = ui.input(|i| i.scroll_delta.y);
+            let scroll_delta = ui.input(|i| i.raw_scroll_delta.y);
             self.camera.dolly(if scroll_delta > 0.0 { 1.0 } else if scroll_delta < 0.0 { -1.0} else { 0.0 });
             self.camera.aspect_ratio = rect.aspect_ratio();
         }

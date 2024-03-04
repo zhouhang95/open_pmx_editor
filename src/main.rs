@@ -15,8 +15,8 @@ fn main() -> eframe::Result<()> {
         device_descriptor: Arc::new(|_adapter| {
             wgpu::DeviceDescriptor {
                 label: Some("egui wgpu device"),
-                features: wgpu::Features::POLYGON_MODE_LINE,
-                limits: wgpu::Limits {
+                required_features: wgpu::Features::POLYGON_MODE_LINE,
+                required_limits: wgpu::Limits {
                     max_texture_dimension_2d: 8192,
                     ..Default::default()
                 },
@@ -35,6 +35,7 @@ fn main() -> eframe::Result<()> {
             }
             SurfaceErrorAction::SkipFrame
         }),
+        desired_maximum_frame_latency: None,
     };
 
     let native_options = eframe::NativeOptions {

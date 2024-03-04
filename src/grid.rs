@@ -2,8 +2,8 @@ use std::{path::Path, sync::Arc};
 
 use glam::*;
 use eframe::{
-    egui_wgpu::wgpu::util::DeviceExt,
-    egui_wgpu::{self, wgpu}, wgpu::{Device, ColorTargetState},
+    egui_wgpu::{self, wgpu::{self, util::DeviceExt}, ScreenDescriptor},
+    wgpu::{ColorTargetState, Device},
 };
 
 use crate::camera::CameraUniform;
@@ -189,6 +189,7 @@ impl egui_wgpu::CallbackTrait for CustomGridCallback {
         &self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
+        _screen_descriptor: &ScreenDescriptor,
         _egui_encoder: &mut wgpu::CommandEncoder,
         resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
