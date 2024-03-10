@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{ffi::OsStr, collections::BTreeMap, path::PathBuf, sync::{atomic::{AtomicBool, Ordering}, Arc}, str::FromStr, fmt::format};
+use std::{collections::{BTreeMap, HashSet}, ffi::OsStr, fmt::format, path::PathBuf, str::FromStr, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use egui::{TextStyle, ScrollArea, mutex::Mutex, viewport, ViewportId};
 use egui_extras::{Column, TableBuilder};
@@ -175,6 +175,13 @@ impl eframe::App for TemplateApp {
                 });
 
                 ui.menu_button("Edit", |ui| {
+                    if ui.button("Calc Connected Normal").clicked() {
+                        if let Some(m) = &mut self.pmx_data {
+                            let mut m = m.lock();
+                            m.calc_connected_nrms();
+                        }
+                        ui.close_menu();
+                    }
                     if ui.button("Japanese to Engligh").clicked() {
                         if let Some(m) = &mut self.pmx_data {
                             let mut m = m.lock();

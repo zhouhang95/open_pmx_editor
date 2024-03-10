@@ -6,6 +6,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::*;
+use std::mem::transmute;
 use std::path::Path;
 use std::collections::*;
 
@@ -341,6 +342,49 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
+    pub fn calc_connected_nrms(&mut self) {
+        let mut mapping = Vec::new();
+        let mut cache: BTreeMap<u128, usize> = BTreeMap::new();
+        for v in &self.verts {
+            unsafe {
+                let mut tmp = 0u128;
+                std::ptr::copy(&v.pos, &mut tmp as *mut u128 as *mut Vec3, 1);
+                let n = if let Some(n) = cache.get(&tmp) {
+                    *n
+                } else {
+                    let n = cache.len();
+                    cache.insert(tmp, n);
+                    n
+                };
+                mapping.push(n);
+            }
+        }
+        let mut face_nrms = Vec::new();
+        let mut vert_associate_face: Vec<HashSet<usize>> = vec![HashSet::new(); cache.len()];
+        for (i, [v0, v1, v2]) in self.faces.iter().enumerate() {
+            vert_associate_face[mapping[*v0 as usize]].insert(i);
+            vert_associate_face[mapping[*v1 as usize]].insert(i);
+            vert_associate_face[mapping[*v2 as usize]].insert(i);
+            let a = self.verts[*v0 as usize].pos;
+            let b = self.verts[*v1 as usize].pos;
+            let c = self.verts[*v2 as usize].pos;
+            let ab = (b - a).normalize();
+            let ac = (c - a).normalize();
+            let face_nrm = ab.cross(ac);
+            face_nrms.push(face_nrm);
+        }
+        let mut vert_nrms = Vec::new();
+        for s in vert_associate_face {
+            let mut nrm = glam::Vec3::ZERO;
+            for i in s {
+                nrm += face_nrms[i];
+            }
+            vert_nrms.push(nrm.normalize());
+        }
+        for (i, v) in self.verts.iter_mut().enumerate() {
+            v.nrm = vert_nrms[mapping[i]];
+        }
+    }
     pub fn load_tex(&self) -> HashMap<i32, RgbaImage> {
         let mut res: HashMap<i32, RgbaImage> = HashMap::new();
         for (i, tex) in self.texs.iter().enumerate() {
