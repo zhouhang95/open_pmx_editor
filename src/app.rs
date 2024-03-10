@@ -145,6 +145,36 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
+                    if ui.button("Save PMX As ...").clicked() {
+                        if let Some(m) = &self.pmx_data {
+                            let path = rfd::FileDialog::new()
+                                .add_filter("Poygon Mesh data eXtension", &["pmx"])
+                                .save_file();
+                            if let Some(p) = &path {
+                                let m = m.lock();
+                                let contents = m.write();
+                                std::fs::write(p, contents).unwrap();
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Save VMD As ...").clicked() {
+                        if let Some(m) = &self.vmd_motion {
+                            let path = rfd::FileDialog::new()
+                                .add_filter("Vocaloid Motion Data", &["vmd"])
+                                .save_file();
+                            if let Some(p) = &path {
+                                m.write_vmd(p.to_str().unwrap());
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Quit").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+
+                ui.menu_button("Edit", |ui| {
                     if ui.button("Japanese to Engligh").clicked() {
                         if let Some(m) = &mut self.pmx_data {
                             let mut m = m.lock();
@@ -171,30 +201,6 @@ impl eframe::App for TemplateApp {
                                     new_morph_keyframes.insert(name, v.clone());
                                 }
                                 m.morph_keyframes = new_morph_keyframes;
-                            }
-                        }
-                        ui.close_menu();
-                    }
-                    if ui.button("Save PMX As ...").clicked() {
-                        if let Some(m) = &self.pmx_data {
-                            let path = rfd::FileDialog::new()
-                                .add_filter("Poygon Mesh data eXtension", &["pmx"])
-                                .save_file();
-                            if let Some(p) = &path {
-                                let m = m.lock();
-                                let contents = m.write();
-                                std::fs::write(p, contents).unwrap();
-                            }
-                        }
-                        ui.close_menu();
-                    }
-                    if ui.button("Save VMD As ...").clicked() {
-                        if let Some(m) = &self.vmd_motion {
-                            let path = rfd::FileDialog::new()
-                                .add_filter("Vocaloid Motion Data", &["vmd"])
-                                .save_file();
-                            if let Some(p) = &path {
-                                m.write_vmd(p.to_str().unwrap());
                             }
                         }
                         ui.close_menu();
@@ -242,11 +248,7 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
-                    if ui.button("Quit").clicked() {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
                 });
-
                 ui.menu_button("View", |ui| {
                     if ui.checkbox(&mut self.show_model_view.lock(), "Show Model View").clicked() {
                         ui.close_menu();
