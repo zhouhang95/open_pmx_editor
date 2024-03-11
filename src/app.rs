@@ -103,7 +103,6 @@ impl TemplateApp {
             let content = std::fs::read(p).unwrap();
             let pmx_data = Arc::new(Mutex::new(Pmx::read(content, p.to_str().unwrap())));
             pmx_data.lock().right_hand();
-            pmx_data.lock().scale(0.08);
             self.pmx_data = Some(pmx_data.clone());
             self.page = Page::Material;
             self.custom3d.lock().load_mesh(pmx_data);
@@ -152,7 +151,9 @@ impl eframe::App for TemplateApp {
                                 .save_file();
                             if let Some(p) = &path {
                                 let m = m.lock();
-                                let contents = m.write();
+                                let mut nm = m.clone();
+                                nm.right_hand();
+                                let contents = nm.write();
                                 std::fs::write(p, contents).unwrap();
                             }
                         }

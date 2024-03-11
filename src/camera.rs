@@ -17,11 +17,11 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            pos: Vec3::new(0.0, 1.0, 0.0),
+            pos: Vec3::new(0.0, 10.0, 0.0),
             yaw: 10.0,
             pitch: 0.0,
             roll: 0.0,
-            dist: 4.0,
+            dist: 45.0,
             fov: 45.0,
             aspect_ratio: 16.0 / 9.0,
             perspective: true,
@@ -84,7 +84,7 @@ impl Camera {
     }
 
     pub fn dolly(&mut self, d: f32) {
-        self.dist -= d * 0.2;
+        self.dist -= d * 2.0;
     }
     pub fn set_not_perspective(&mut self) {
         self.perspective = false;

@@ -23,7 +23,7 @@ var<uniform> uniforms: Uniforms;
 fn vs_main(model: VertexInput) -> VertexOut {
     var out: VertexOut;
 
-    out.pos = uniforms.view_proj * vec4f(model.pos, 1.0);
+    out.pos = uniforms.view_proj * vec4f(model.pos * 10.0, 1.0);
     out.color = vec4f(model.color, 1.0);
 
     return out;
