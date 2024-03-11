@@ -31,6 +31,7 @@ pub struct Pmx {
     pub comment: String,
     pub comment_en: String,
     pub verts: Vec<Vertex>,
+    pub appendix_uvs: Vec<Vec<Vec4>>,
     pub faces: Vec<[u32; 3]>,
     pub texs: Vec<String>,
     pub mats: Vec<Mat>,
@@ -435,7 +436,6 @@ impl Pmx {
         file.read_u8().unwrap();
         let utf8 = file.read_u8().unwrap() == 1;
         let appendix_uv = file.read_u8().unwrap();
-        assert_eq!(appendix_uv, 0);
         let vertex_index_size = file.read_u8().unwrap();
         let texture_index_size = file.read_u8().unwrap();
         let material_index_size = file.read_u8().unwrap();
@@ -446,7 +446,7 @@ impl Pmx {
         let name_en = Pmx::read_string(file, utf8);
         let comment = Pmx::read_string(file, utf8);
         let comment_en = Pmx::read_string(file, utf8);
-        let verts = Pmx::read_verts(file, bone_index_size);
+        let (verts, appendix_uvs) = Pmx::read_verts(file, bone_index_size, appendix_uv);
         let faces = Pmx::read_faces(file, vertex_index_size);
         let texs = Pmx::read_texs(file, utf8);
         let mats = Pmx::read_mats(file, utf8, texture_index_size);
@@ -471,6 +471,7 @@ impl Pmx {
             comment,
             comment_en,
             verts,
+            appendix_uvs,
             faces,
             texs,
             mats,
@@ -930,13 +931,18 @@ impl Pmx {
         }
         vct
     }
-    fn read_verts(file: &mut Cursor<Vec<u8>>, bone_index_size: u8) -> Vec<Vertex> {
+    fn read_verts(file: &mut Cursor<Vec<u8>>, bone_index_size: u8, appendix_uv: u8) -> (Vec<Vertex>, Vec<Vec<Vec4>>) {
         let len = file.read_u32::<LE>().unwrap();
+        let mut appendix_uvs: Vec<Vec<Vec4>> = vec![Vec::with_capacity(len as usize); appendix_uv as usize];
         let mut vct = Vec::with_capacity(len as usize);
         for i in 0..len {
             let pos = read_float3(file);
             let nrm = read_float3(file);
             let uv = read_float2(file);
+            for j in 0..appendix_uv {
+                appendix_uvs[j as usize].push(read_float4(file));
+            }
+
             let weight_type = file.read_u8().unwrap();
             let weight = if weight_type == 0 {
                 let a = Pmx::read_int(file, bone_index_size);
@@ -982,7 +988,7 @@ impl Pmx {
                 edge_scale,
             })
         }
-        vct
+        (vct, appendix_uvs)
     }
     
 

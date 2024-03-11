@@ -65,7 +65,7 @@ impl Pmx {
         file.write_u8(8).unwrap(); // unknown
 
         file.write_u8(0).unwrap(); // use uft-16
-        file.write_u8(0).unwrap(); // appendix_uv
+        file.write_u8(self.appendix_uvs.len() as _).unwrap(); // appendix_uv
         let vertex_index_size = Pmx::get_uint_size(self.verts.len());
         let texture_index_size = Pmx::get_int_size(self.texs.len());
         let material_index_size = Pmx::get_int_size(self.mats.len());
@@ -115,10 +115,13 @@ impl Pmx {
 
     fn write_verts(&self, file: &mut Cursor<Vec<u8>>, bone_index_size: u8) {
         file.write_u32::<LE>(self.verts.len() as _).unwrap();
-        for v in &self.verts {
+        for (i, v) in self.verts.iter().enumerate() {
             write_float3(file, v.pos);
             write_float3(file, v.nrm);
             write_float2(file, v.uv);
+            for uvs in &self.appendix_uvs {
+                write_float4(file, uvs[i]);
+            }
             match v.weight {
                 VertexWeight::One(b0) => {
                     file.write_u8(0).unwrap();
