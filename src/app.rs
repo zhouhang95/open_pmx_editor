@@ -176,10 +176,10 @@ impl eframe::App for TemplateApp {
                 });
 
                 ui.menu_button("Edit", |ui| {
-                    if ui.button("Calc Connected Normal").clicked() {
+                    if ui.button("Calc Connected Normal to UV1").clicked() {
                         if let Some(m) = &mut self.pmx_data {
                             let mut m = m.lock();
-                            m.calc_connected_nrms();
+                            m.calc_connected_nrms_to_uv1();
                         }
                         ui.close_menu();
                     }

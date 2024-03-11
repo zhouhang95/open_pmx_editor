@@ -343,7 +343,7 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
-    pub fn calc_connected_nrms(&mut self) {
+    pub fn calc_connected_nrms_to_uv1(&mut self) {
         let mut mapping = Vec::new();
         let mut cache: BTreeMap<u128, usize> = BTreeMap::new();
         for v in &self.verts {
@@ -382,9 +382,12 @@ impl Pmx {
             }
             vert_nrms.push(nrm.normalize());
         }
+        let mut con_nrms = Vec::with_capacity(self.verts.len());
         for (i, v) in self.verts.iter_mut().enumerate() {
-            v.nrm = vert_nrms[mapping[i]];
+            let nrm = vert_nrms[mapping[i]];
+            con_nrms.push(vec4(nrm.x, nrm.y, -nrm.z, 0.0));
         }
+        self.appendix_uvs.push(con_nrms);
     }
     pub fn load_tex(&self) -> HashMap<i32, RgbaImage> {
         let mut res: HashMap<i32, RgbaImage> = HashMap::new();
