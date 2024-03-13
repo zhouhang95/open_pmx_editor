@@ -387,7 +387,10 @@ impl Pmx {
             let nrm = vert_nrms[mapping[i]];
             con_nrms.push(vec4(nrm.x, nrm.y, -nrm.z, 0.0));
         }
-        self.appendix_uvs.push(con_nrms);
+        if self.appendix_uvs.len() == 0 {
+            self.appendix_uvs.push(Vec::new());
+        }
+        self.appendix_uvs[0] = con_nrms;
     }
     pub fn load_tex(&self) -> HashMap<i32, RgbaImage> {
         let mut res: HashMap<i32, RgbaImage> = HashMap::new();
