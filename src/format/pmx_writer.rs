@@ -378,7 +378,7 @@ impl Pmx {
         }
     }
     fn write_display_frames(&self, file: &mut Cursor<Vec<u8>>, bone_index_size: u8, morph_index_size: u8) {
-        let display_frames: Vec<DisplayFrame> = if self.display_frames.is_empty() {
+        let display_frames: Vec<DisplayFrame> = if self.display_frames.len() < 2 {
             vec![
                 DisplayFrame { name: "Root".to_string(), name_en: "Root".to_string(), deletable: true, morph_items: vec![DisplayFrameIndex::Bone(0)] },
                 DisplayFrame { name: "表情".to_string(), name_en: "Exp".to_string(), deletable: true, morph_items: vec![] },
