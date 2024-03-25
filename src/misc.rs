@@ -6,9 +6,6 @@ use crate::format::pmx::*;
 
 
 pub fn add_sphere(m: &mut Pmx, segments: u32, rings: u32, radius: f32) {
-    let segments = 32;
-    let rings = 32;
-    let radius = 1.0;
     let sphere_name = format!("Sphere_{}", m.bones.len());
 
     {
