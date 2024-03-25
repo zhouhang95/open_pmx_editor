@@ -121,7 +121,7 @@ impl Default for Mat {
             edge_scale: 1.0,
             tex_index: -1,
             env_index: -1,
-            env_blend_mode: BlendMode::Mul,
+            env_blend_mode: BlendMode::Disable,
             toon: Toon::Tex(-1),
             comment: Default::default(),
             associated_face_count: 0,

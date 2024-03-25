@@ -4,7 +4,7 @@ use std::{collections::{BTreeMap, HashSet}, ffi::OsStr, fmt::format, path::PathB
 use egui::{TextStyle, ScrollArea, mutex::Mutex, viewport, ViewportId};
 use egui_extras::{Column, TableBuilder};
 
-use crate::format::{motion::{BoneKeyframe, MorphKeyframe, Motion}, pmm::read_pmm, pmx::Pmx};
+use crate::{format::{motion::{BoneKeyframe, MorphKeyframe, Motion}, pmm::read_pmm, pmx::Pmx}, misc::add_sphere};
 use crate::dict::{bone_jap_to_eng, morph_jap_to_eng};
 use crate::custom3d::{Custom3d, self};
 
@@ -90,7 +90,7 @@ impl TemplateApp {
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
             model_viewport_id: egui::ViewportId::from_hash_of("model_viewport"),
         };
-        s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
+        // s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
         s
     }
     fn load_file(&mut self, p: &PathBuf) {
@@ -253,6 +253,13 @@ impl eframe::App for TemplateApp {
                                 self.info_text = info;
                                 self.info_window_open = true;
                             }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Add UV Sphere").clicked() {
+                        if let Some(m) = &mut self.pmx_data {
+                            let mut m = m.lock();
+                            add_sphere(&mut m, 32, 16, 1.0);
                         }
                         ui.close_menu();
                     }

@@ -8,4 +8,5 @@ mod custom3d;
 mod camera;
 mod grid;
 mod texture;
+mod misc;
 pub use app::TemplateApp;
