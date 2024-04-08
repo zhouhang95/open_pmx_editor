@@ -395,7 +395,8 @@ impl Pmx {
     pub fn load_tex(&self) -> HashMap<i32, RgbaImage> {
         let mut res: HashMap<i32, RgbaImage> = HashMap::new();
         for (i, tex) in self.texs.iter().enumerate() {
-            if let Ok(mut reader) = ImageReader::open("assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/".to_string() + tex) {
+            let tex_path = Path::new(&self.path).parent().unwrap().join(tex);
+            if let Ok(mut reader) = ImageReader::open(tex_path) {
                 let tl = tex.to_lowercase();
                 if tl.ends_with("sph") || tl.ends_with("spa") {
                     reader.set_format(ImageFormat::Bmp);
