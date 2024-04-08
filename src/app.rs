@@ -90,7 +90,7 @@ impl TemplateApp {
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
             model_viewport_id: egui::ViewportId::from_hash_of("model_viewport"),
         };
-        // s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
+        s.load_file(&PathBuf::from_str("./assets/ImagineGirls_Iris_v102_mmd/Iris_mmd/Iris.pmx").unwrap());
         s
     }
     fn load_file(&mut self, p: &PathBuf) {
