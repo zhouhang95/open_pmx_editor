@@ -606,7 +606,7 @@ impl eframe::App for TemplateApp {
 
         {
             let window = egui::Window::new("Info")
-                                            .scroll2([false, true])
+                                            .scroll([false, true])
                                             .collapsible(false)
                                             .open(&mut self.info_window_open)
                                             .show(ctx, |ui| {

@@ -116,11 +116,13 @@ impl GridRenderResources {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[GRID_BUFFER_LAYOUT],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(color_target_state)],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::LineList,

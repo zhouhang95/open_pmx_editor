@@ -354,11 +354,13 @@ impl TriangleRenderResources {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[VERTEX_BUFFER_LAYOUT],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "wireframe_main",
                 targets: &[Some(color_target_state.into())],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 polygon_mode: wgpu::PolygonMode::Line,
@@ -386,6 +388,7 @@ impl TriangleRenderResources {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[VERTEX_BUFFER_LAYOUT],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -395,6 +398,7 @@ impl TriangleRenderResources {
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
                 })],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 ..Default::default()
@@ -416,6 +420,7 @@ impl TriangleRenderResources {
                 module: &shader,
                 entry_point: "vs_main",
                 buffers: &[VERTEX_BUFFER_LAYOUT],
+                compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -425,6 +430,7 @@ impl TriangleRenderResources {
                     blend: Some(BlendState::ALPHA_BLENDING),
                     write_mask: ColorWrites::ALL,
                 })],
+                compilation_options: Default::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(Face::Back),
