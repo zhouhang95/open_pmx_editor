@@ -1973,7 +1973,6 @@ dependencies = [
  "glam",
  "image",
  "log",
- "once_cell",
  "rfd",
  "serde",
  "uuid",

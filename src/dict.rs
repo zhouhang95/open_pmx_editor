@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
-static MORPH_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+static MORPH_JP_TO_EN: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
     HashMap::from([
         ("まばたき", "blink"),
         ("笑い", "happy_eyes"),
@@ -105,7 +105,7 @@ static MORPH_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
     ])
 });
 
-static BONE_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+static BONE_JP_TO_EN: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
     HashMap::from([
         ("操作中心", "op_center"),
         ("全ての親", "root"),
@@ -258,7 +258,7 @@ static BONE_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
         ("齿上", "tooth_up"),
     ])
 });
-static UTILS_JP_TO_EN: Lazy<HashMap<&str, &str>> = Lazy::new(|| {
+static UTILS_JP_TO_EN: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
     HashMap::from([
         ("０", "_0"),
         ("１", "_1"),

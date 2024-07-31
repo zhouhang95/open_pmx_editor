@@ -7,10 +7,10 @@ use eframe::{
 };
 
 use image::{io::Reader as ImageReader, RgbaImage};
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 #[allow(dead_code)]
-pub const IMAGE_TOONS: Lazy<Vec<RgbaImage>> = Lazy::new(|| {
+pub const IMAGE_TOONS: LazyLock<Vec<RgbaImage>> = LazyLock::new(|| {
     let mut res = Vec::new();
     for i in 1..=10 {
         let reader = ImageReader::open(format!("assets/toons/toon{:02}.bmp", i)).unwrap();
