@@ -653,6 +653,15 @@ impl eframe::App for TemplateApp {
                                                     ctx.request_repaint_of(model_viewport_id);
                                                 }
                                             }
+                                            if ui.button("Delete").clicked() {
+                                                let mut mats_need_delete = Vec::new();
+                                                for (mat, checked) in custom3d.filters.iter_mut() {
+                                                    if *checked {
+                                                        mats_need_delete.push(mat.clone());
+                                                    }
+                                                }
+                                                todo!("delete selected mats");
+                                            }
                                         });
                                         let text_style = TextStyle::Body;
                                         let row_height = ui.text_style_height(&text_style);
