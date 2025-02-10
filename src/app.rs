@@ -663,8 +663,11 @@ impl eframe::App for TemplateApp {
                                                     }
                                                 }
                                                 if let Some(m) = &pmx_data {
-                                                    let mut m = m.lock();
-                                                    m.delete_mats(&mats_need_delete);
+                                                    {
+                                                        let mut m = m.lock();
+                                                        m.delete_mats(&mats_need_delete);
+                                                    }
+                                                    custom3d.load_mesh(m.clone());
                                                 }
                                             }
                                         });

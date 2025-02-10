@@ -89,6 +89,7 @@ impl Custom3d {
     }
     pub fn load_mesh(&mut self, pmx: Arc<Mutex<Pmx>>) {
         let pmx = pmx.lock();
+        self.filters.clear();
         for m in &pmx.mats {
             self.filters.push((m.name.clone(), true));
         }
