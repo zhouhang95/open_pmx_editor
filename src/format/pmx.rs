@@ -343,6 +343,25 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
+    pub fn delete_mats(&mut self, mats: &Vec<String>) {
+        let mut new_mats = Vec::new();
+        let mut new_faces: Vec<[u32; 3]> = Vec::new();
+        let mut start: usize = 0;
+        for mat in &self.mats {
+            if mats.contains(&mat.name) == false {
+                new_mats.push(mat.clone());
+                new_faces.extend_from_slice(&self.faces[start..(start + mat.associated_face_count as usize)]);
+            }
+            start = mat.associated_face_count as _;
+        }
+        self.mats = new_mats;
+        self.faces = new_faces;
+        self.delete_unref_point();
+    }
+    pub fn delete_unref_point(&mut self) {
+
+
+    }
     pub fn calc_connected_nrms_to_uv1(&mut self) {
         let mut mapping = Vec::new();
         let mut cache: BTreeMap<u128, usize> = BTreeMap::new();
