@@ -78,7 +78,7 @@ impl Custom3d {
             .renderer
             .write()
             .callback_resources
-            .insert(GridRenderResources::new(wgpu_render_state.device.clone(), wgpu_render_state.target_format.into()));
+            .insert(GridRenderResources::new(wgpu_render_state.device.clone().into(), wgpu_render_state.target_format.into()));
         Self {
             camera: Camera::new(),
             wgpu_render_state,

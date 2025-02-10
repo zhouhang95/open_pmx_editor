@@ -3,15 +3,13 @@
 
 use std::sync::Arc;
 
-use eframe::{egui_wgpu::{SurfaceErrorAction, WgpuConfiguration, WgpuSetup}, wgpu};
+use eframe::{egui_wgpu::{SurfaceErrorAction, WgpuConfiguration, WgpuSetup, WgpuSetupCreateNew}, wgpu};
 
 fn main() -> eframe::Result<()> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
     let wgpu_options = WgpuConfiguration {
-        
         present_mode: wgpu::PresentMode::AutoVsync,
-        
         
         on_surface_error: Arc::new(|err| {
             if err == wgpu::SurfaceError::Outdated {
@@ -21,10 +19,7 @@ fn main() -> eframe::Result<()> {
             SurfaceErrorAction::SkipFrame
         }),
         desired_maximum_frame_latency: None,
-        wgpu_setup: WgpuSetup::CreateNew {
-            supported_backends: wgpu::util::backend_bits_from_env()
-                .unwrap_or(wgpu::Backends::PRIMARY),
-    
+        wgpu_setup: WgpuSetup::CreateNew(WgpuSetupCreateNew {
             device_descriptor: Arc::new(|_adapter| {
                 wgpu::DeviceDescriptor {
                     label: Some("egui wgpu device"),
@@ -36,9 +31,8 @@ fn main() -> eframe::Result<()> {
                     memory_hints: wgpu::MemoryHints::default(),
                 }
             }),
-            power_preference: wgpu::util::power_preference_from_env()
-                .unwrap_or(wgpu::PowerPreference::LowPower),
-        },
+            ..Default::default()
+        }),
     };
 
     let native_options = eframe::NativeOptions {
