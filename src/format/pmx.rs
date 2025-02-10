@@ -352,7 +352,7 @@ impl Pmx {
                 new_mats.push(mat.clone());
                 new_faces.extend_from_slice(&self.faces[start..(start + mat.associated_face_count as usize)]);
             }
-            start = mat.associated_face_count as _;
+            start += mat.associated_face_count as usize;
         }
         self.mats = new_mats;
         self.faces = new_faces;

@@ -617,6 +617,7 @@ impl eframe::App for TemplateApp {
             let show_model_view = self.show_model_view.clone();
             if *show_model_view.lock() {
                 let custom3d = self.custom3d.clone();
+                let pmx_data = self.pmx_data.clone();
                 let model_viewport_id = self.model_viewport_id;
                 ctx.show_viewport_deferred(
                     model_viewport_id,
@@ -626,6 +627,7 @@ impl eframe::App for TemplateApp {
                     move |ctx, class| {
                         if custom3d.lock().show_material_filter {
                             let custom3d = custom3d.clone();
+                            let pmx_data = pmx_data.clone();
                             ctx.show_viewport_deferred(
                                 egui::ViewportId::from_hash_of("deferred_viewport"),
                                 egui::ViewportBuilder::default()
@@ -660,7 +662,10 @@ impl eframe::App for TemplateApp {
                                                         mats_need_delete.push(mat.clone());
                                                     }
                                                 }
-                                                todo!("delete selected mats");
+                                                if let Some(m) = &pmx_data {
+                                                    let mut m = m.lock();
+                                                    m.delete_mats(&mats_need_delete);
+                                                }
                                             }
                                         });
                                         let text_style = TextStyle::Body;
