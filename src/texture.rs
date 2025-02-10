@@ -1,6 +1,7 @@
 use eframe::wgpu;
 
 pub struct TextureWrapper {
+    #[allow(dead_code)]
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,

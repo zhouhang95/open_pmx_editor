@@ -6,7 +6,7 @@ use eframe::{
     wgpu::{BlendState, ColorTargetState, ColorWrites, Face},
 };
 
-use image::{io::Reader as ImageReader, RgbaImage};
+use image::{ImageReader, RgbaImage};
 use std::sync::LazyLock;
 
 #[allow(dead_code)]

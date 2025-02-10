@@ -15,7 +15,7 @@ use glam::*;
 use image::Rgba;
 use image::RgbaImage;
 use uuid::Uuid;
-use image::io::Reader as ImageReader;
+use image::ImageReader;
 use image::ImageFormat;
 use image::DynamicImage;
 

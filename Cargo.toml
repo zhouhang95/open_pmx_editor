@@ -13,11 +13,11 @@ eframe = { version = "0.29", default-features = false, features = [
     "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
 ] }
 log = "0.4"
-rfd = "0.14"
+rfd = "0.15"
 bytemuck = "1.14"
 encoding = "0.2"
 byteorder = "1.4"
-glam = "0.28"
+glam = "0.29"
 bitflags = "2"
 uuid = { version = "1.4", features = ["v4"] }
 
