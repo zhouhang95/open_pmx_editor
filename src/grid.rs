@@ -137,6 +137,7 @@ impl GridRenderResources {
             }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
+            cache: None,
         });
         let grid_uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d"),
@@ -174,7 +175,7 @@ impl GridRenderResources {
         );
     }
 
-    fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
+    fn paint(&self, render_pass: &mut wgpu::RenderPass<'_>) {
         render_pass.set_pipeline(&self.grid_pipeline);
         render_pass.set_vertex_buffer(0, self.grid_vert_buffer.slice(..));
         render_pass.set_bind_group(0, &self.grid_bind_group, &[]);
@@ -200,11 +201,11 @@ impl egui_wgpu::CallbackTrait for CustomGridCallback {
         Vec::new()
     }
 
-    fn paint<'a>(
+    fn paint(
         &self,
         _info: egui::PaintCallbackInfo,
-        render_pass: &mut wgpu::RenderPass<'a>,
-        resources: &'a egui_wgpu::CallbackResources,
+        render_pass: &mut wgpu::RenderPass<'static>,
+        resources: &egui_wgpu::CallbackResources,
     ) {
         let resources: &GridRenderResources = resources.get().unwrap();
         resources.paint(render_pass);

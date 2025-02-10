@@ -144,15 +144,14 @@ impl egui_wgpu::CallbackTrait for CustomTriangleCallback {
         Vec::new()
     }
 
-    fn paint<'a>(
+    fn paint(
         &self,
         _info: egui::PaintCallbackInfo,
-        render_pass: &mut wgpu::RenderPass<'a>,
-        resources: &'a egui_wgpu::CallbackResources,
+        render_pass: &mut wgpu::RenderPass<'static>,
+        resources: &egui_wgpu::CallbackResources,
     ) {
-        if let Some(resources) = resources.get::<TriangleRenderResources>() {
-            resources.paint(render_pass);
-        }
+        let resources: &TriangleRenderResources = resources.get().unwrap();
+        resources.paint(render_pass);
     }
 }
 
@@ -379,6 +378,7 @@ impl TriangleRenderResources {
             }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
+            cache: None,
         });
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -412,6 +412,7 @@ impl TriangleRenderResources {
             }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
+            cache: None,
         });
         let cull_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("mesh_pipeline"),
@@ -445,6 +446,7 @@ impl TriangleRenderResources {
             }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
+            cache: None,
         });
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("custom3d"),
@@ -516,7 +518,7 @@ impl TriangleRenderResources {
         );
     }
 
-    fn paint<'rp>(&'rp self, render_pass: &mut wgpu::RenderPass<'rp>) {
+    fn paint(&self, render_pass: &mut wgpu::RenderPass<'_>) {
         // Draw our triangle!
         render_pass.set_vertex_buffer(0, self.vert_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
