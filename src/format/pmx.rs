@@ -359,8 +359,28 @@ impl Pmx {
         self.delete_unref_point();
     }
     pub fn delete_unref_point(&mut self) {
-
-
+        let mut ref_set = BTreeSet::new();
+        for [x, y, z] in &self.faces {
+            ref_set.insert(x);
+            ref_set.insert(y);
+            ref_set.insert(z);
+        }
+        let mut new_verts = Vec::new();
+        let mut mapping: BTreeMap<u32, u32> = BTreeMap::new();
+        for (new_index, old_index) in ref_set.iter().enumerate() {
+            new_verts.push(self.verts[**old_index as usize]);
+            mapping.insert(**old_index, new_index as _);
+        }
+        self.verts = new_verts;
+        let mut new_faces: Vec<[u32; 3]> = Vec::new();
+        for [x, y, z] in &self.faces {
+            new_faces.push([
+                mapping[x],
+                mapping[y],
+                mapping[z],
+            ]);
+        }
+        self.faces = new_faces;
     }
     pub fn calc_connected_nrms_to_uv1(&mut self) {
         let mut mapping = Vec::new();
