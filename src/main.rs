@@ -3,32 +3,16 @@
 
 use std::sync::Arc;
 
-use eframe::{egui_wgpu::{WgpuConfiguration, SurfaceErrorAction}, wgpu};
+use eframe::{egui_wgpu::{SurfaceErrorAction, WgpuConfiguration, WgpuSetup}, wgpu};
 
 fn main() -> eframe::Result<()> {
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 
     let wgpu_options = WgpuConfiguration {
-        supported_backends: wgpu::util::backend_bits_from_env()
-            .unwrap_or(wgpu::Backends::PRIMARY),
-
-        device_descriptor: Arc::new(|_adapter| {
-            wgpu::DeviceDescriptor {
-                label: Some("egui wgpu device"),
-                required_features: wgpu::Features::POLYGON_MODE_LINE,
-                required_limits: wgpu::Limits {
-                    max_texture_dimension_2d: 8192,
-                    ..Default::default()
-                },
-                memory_hints: wgpu::MemoryHints::default(),
-            }
-        }),
-
+        
         present_mode: wgpu::PresentMode::AutoVsync,
-
-        power_preference: wgpu::util::power_preference_from_env()
-            .unwrap_or(wgpu::PowerPreference::LowPower),
-
+        
+        
         on_surface_error: Arc::new(|err| {
             if err == wgpu::SurfaceError::Outdated {
             } else {
@@ -37,6 +21,24 @@ fn main() -> eframe::Result<()> {
             SurfaceErrorAction::SkipFrame
         }),
         desired_maximum_frame_latency: None,
+        wgpu_setup: WgpuSetup::CreateNew {
+            supported_backends: wgpu::util::backend_bits_from_env()
+                .unwrap_or(wgpu::Backends::PRIMARY),
+    
+            device_descriptor: Arc::new(|_adapter| {
+                wgpu::DeviceDescriptor {
+                    label: Some("egui wgpu device"),
+                    required_features: wgpu::Features::POLYGON_MODE_LINE,
+                    required_limits: wgpu::Limits {
+                        max_texture_dimension_2d: 8192,
+                        ..Default::default()
+                    },
+                    memory_hints: wgpu::MemoryHints::default(),
+                }
+            }),
+            power_preference: wgpu::util::power_preference_from_env()
+                .unwrap_or(wgpu::PowerPreference::LowPower),
+        },
     };
 
     let native_options = eframe::NativeOptions {

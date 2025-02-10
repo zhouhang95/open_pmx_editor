@@ -47,9 +47,9 @@ fn setup_custom_fonts(ctx: &egui::Context) {
     // .ttf and .otf files supported.
     fonts.font_data.insert(
         "my_font".to_owned(),
-        egui::FontData::from_static(include_bytes!(
+        Arc::new(egui::FontData::from_static(include_bytes!(
             "../assets/SourceHanSans-Normal.otf"
-        )),
+        ))),
     );
 
     // Put my font first (highest priority) for proportional text:
@@ -669,6 +669,7 @@ impl eframe::App for TemplateApp {
                                                     }
                                                     custom3d.load_mesh(m.clone());
                                                 }
+                                                ctx.request_repaint_of(model_viewport_id);
                                             }
                                         });
                                         let text_style = TextStyle::Body;

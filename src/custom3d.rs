@@ -352,13 +352,13 @@ impl TriangleRenderResources {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: Some("vs_main"),
                 buffers: &[VERTEX_BUFFER_LAYOUT],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: "wireframe_main",
+                entry_point: Some("wireframe_main"),
                 targets: &[Some(color_target_state.into())],
                 compilation_options: Default::default(),
             }),
@@ -387,13 +387,13 @@ impl TriangleRenderResources {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: Some("vs_main"),
                 buffers: &[VERTEX_BUFFER_LAYOUT],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: "fs_main",
+                entry_point: Some("fs_main"),
                 targets: &[Some(ColorTargetState {
                     format: color_target_state,
                     blend: Some(BlendState::ALPHA_BLENDING),
@@ -420,13 +420,13 @@ impl TriangleRenderResources {
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: Some("vs_main"),
                 buffers: &[VERTEX_BUFFER_LAYOUT],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: "fs_main",
+                entry_point: Some("fs_main"),
                 targets: &[Some(ColorTargetState {
                     format: color_target_state,
                     blend: Some(BlendState::ALPHA_BLENDING),
