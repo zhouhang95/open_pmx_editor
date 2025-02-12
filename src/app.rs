@@ -1,5 +1,5 @@
 #![allow(dead_code, unused_imports, unused_variables)]
-use std::{collections::{BTreeMap, HashSet}, ffi::OsStr, fmt::format, path::PathBuf, str::FromStr, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{collections::{BTreeMap, BTreeSet, HashSet}, ffi::OsStr, fmt::format, path::PathBuf, str::FromStr, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 use egui::{TextStyle, ScrollArea, mutex::Mutex, viewport, ViewportId};
 use egui_extras::{Column, TableBuilder};
@@ -24,7 +24,7 @@ enum Page {
 pub struct TemplateApp {
     vmd_motion: Option<Motion>,
     pmx_data: Option<Arc<Mutex<Pmx>>>,
-    pmx_mat_cur_value: usize,
+    pmx_mat_cur_value: BTreeSet<usize>,
     pmx_bone_cur_value: usize,
     pmx_morph_cur_value: usize,
     page: Page,
@@ -84,7 +84,7 @@ impl TemplateApp {
             page: Page::VmdBone,
             pmx_data: None,
             pmx_bone_cur_value: 0,
-            pmx_mat_cur_value: 0,
+            pmx_mat_cur_value: BTreeSet::new(),
             pmx_morph_cur_value: 0,
             show_model_view: Arc::new(Mutex::new(true)),
             custom3d: Arc::new(Mutex::new(Custom3d::new(cc))),
@@ -404,7 +404,19 @@ impl eframe::App for TemplateApp {
                             ui.with_layout(egui::Layout::top_down_justified(egui::Align::LEFT), |ui| {
                                 for row in row_range {
                                     let text = format!("{}{:3}: {}", alphas[row], row, names[row]);
-                                    ui.selectable_value(&mut self.pmx_mat_cur_value, row, text);
+                                    let selected = self.pmx_mat_cur_value.contains(&row);
+                                    if ui.selectable_label(selected, text).clicked() {
+                                        if ui.input(|i| i.modifiers.ctrl) {
+                                            if selected {
+                                                self.pmx_mat_cur_value.remove(&row);
+                                            } else {
+                                                self.pmx_mat_cur_value.insert(row);
+                                            }
+                                        } else {
+                                            self.pmx_mat_cur_value.clear();
+                                            self.pmx_mat_cur_value.insert(row);
+                                        }
+                                    }
                                 }
                             });
                         },
@@ -452,8 +464,8 @@ impl eframe::App for TemplateApp {
             Page::Material => {
                 if let Some(m) = &self.pmx_data {
                     let m = m.lock();
-                    if m.mats.len() > 1 {
-                        let mat = &m.mats[self.pmx_mat_cur_value];
+                    if m.mats.len() > 0 && self.pmx_mat_cur_value.len() > 0 {
+                        let mat = &m.mats[*self.pmx_mat_cur_value.first().unwrap()];
                         ui.heading(format!("Name: {}", mat.name));
                         ui.label(format!("Associated Face Count: {}", mat.associated_face_count));
                         ui.label(format!("NameEn: {}", mat.name_en));
