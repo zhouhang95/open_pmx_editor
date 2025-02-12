@@ -343,6 +343,43 @@ pub struct MorphMatItem {
 }
 
 impl Pmx {
+    pub fn mat_merge(&mut self, mats: &BTreeSet<usize>) {
+        let mut merged_face = Vec::new();
+        let mut merged_face_count = 0;
+        {
+            let mut start: usize = 0;
+            for i in 0..self.mats.len() {
+                let mat = &self.mats[i];
+                if mats.contains(&i) {
+                    merged_face.extend_from_slice(&self.faces[start..(start + mat.associated_face_count as usize)]);
+                    merged_face_count += mat.associated_face_count;
+                }
+                start += mat.associated_face_count as usize;
+            }
+        }
+        let mut new_mats = Vec::new();
+        let mut new_faces: Vec<[u32; 3]> = Vec::new();
+        {
+            let mut start: usize = 0;
+            for i in 0..self.mats.len() {
+                let mat = &self.mats[i];
+                if mats.contains(&i) {
+                    if i == *mats.first().unwrap() {
+                        let mut new_mat = mat.clone();
+                        new_mat.associated_face_count = merged_face_count;
+                        new_mats.push(new_mat);
+                        new_faces.extend(&merged_face);
+                    }
+                } else {
+                    new_mats.push(mat.clone());
+                    new_faces.extend_from_slice(&self.faces[start..(start + mat.associated_face_count as usize)]);
+                }
+                start += mat.associated_face_count as usize;
+            }
+        }
+        self.mats = new_mats;
+        self.faces = new_faces;
+    }
     pub fn delete_mats(&mut self, mats: &Vec<String>) {
         let mut new_mats = Vec::new();
         let mut new_faces: Vec<[u32; 3]> = Vec::new();

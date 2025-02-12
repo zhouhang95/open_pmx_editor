@@ -266,6 +266,14 @@ impl eframe::App for TemplateApp {
                     ui.separator();
                     ui.menu_button("Material", |ui| {
                         if ui.button("Merge").clicked() {
+                            if let Some(m) = &mut self.pmx_data {
+                                {
+                                    let mut m = m.lock();
+                                    m.mat_merge(&self.pmx_mat_cur_value);
+                                }
+                                self.pmx_mat_cur_value.clear();
+                                self.custom3d.lock().load_mesh(m.clone());
+                            }
                             ui.close_menu();
                         }
                     });
