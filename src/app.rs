@@ -263,6 +263,12 @@ impl eframe::App for TemplateApp {
                         }
                         ui.close_menu();
                     }
+                    ui.separator();
+                    ui.menu_button("Material", |ui| {
+                        if ui.button("Merge").clicked() {
+                            ui.close_menu();
+                        }
+                    });
                 });
                 ui.menu_button("View", |ui| {
                     if ui.checkbox(&mut self.show_model_view.lock(), "Show Model View").clicked() {
