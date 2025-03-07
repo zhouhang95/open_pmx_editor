@@ -19,6 +19,7 @@ enum Page {
     Joint,
     VmdBone,
     VmdMorph,
+    VmdCamera,
 }
 
 pub struct TemplateApp {
@@ -299,6 +300,7 @@ impl eframe::App for TemplateApp {
                 // ui.selectable_value(&mut self.page, Page::Joint, "Joint");
                 ui.selectable_value(&mut self.page, Page::VmdBone, "VmdBone");
                 ui.selectable_value(&mut self.page, Page::VmdMorph, "VmdMorph");
+                ui.selectable_value(&mut self.page, Page::VmdCamera, "VmdCamera");
             });
         });
 
@@ -361,6 +363,18 @@ impl eframe::App for TemplateApp {
                             });
                         },
                     );
+                },
+                Page::VmdCamera => {
+                    let mut count = 0;
+                    if let Some(m) = &self.vmd_motion {
+                        ui.heading(&m.model_name);
+                        count = m.camera_keyframes.len();
+                    }
+                    ui.horizontal(|ui| {
+                        let text = format!("Count: {}", count);
+                        ui.heading(text);
+                    });
+                    ui.separator();
                 },
                 Page::Bone => {
                     let mut names = Vec::new();
@@ -568,6 +582,76 @@ impl eframe::App for TemplateApp {
                             row.col(|ui| {
                                 let rot = bone_cur_keyframe[row_index].rot;
                                 ui.label(format!("{}, {}, {}, {}", rot.x, rot.y, rot.z, rot.w));
+                            });
+                        });
+                    });
+            },
+            Page::VmdCamera => {
+                let mut cur_keyframe = Vec::new();
+                if let Some(m) = &self.vmd_motion {
+                    cur_keyframe = m.camera_keyframes.clone();
+                }
+
+                let text_height = egui::TextStyle::Body.resolve(ui.style()).size;
+
+                let table = TableBuilder::new(ui)
+                    .striped(true)
+                    .resizable(true)
+                    .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .column(Column::auto())
+                    .column(Column::initial(100.0))
+                    .column(Column::remainder())
+                    .min_scrolled_height(0.0);
+
+                table
+                    .header(20.0, |mut header| {
+                        header.col(|ui| {
+                            ui.strong("Index");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Frame");
+                        });
+                        header.col(|ui| {
+                            ui.strong("FOV");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Dist");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Translate");
+                        });
+                        header.col(|ui| {
+                            ui.strong("Rotation");
+                        });
+                    })
+                    .body(|body|  {
+                        body.rows(text_height, cur_keyframe.len(), |mut row| {
+                            let row_index = row.index();
+                            row.col(|ui| {
+                                ui.label(row_index.to_string());
+                            });
+                            row.col(|ui| {
+                                let frame = cur_keyframe[row_index].frame;
+                                ui.label(frame.to_string());
+                            });
+                            row.col(|ui| {
+                                let fov = cur_keyframe[row_index].fov;
+                                ui.label(fov.to_string());
+                            });
+                            row.col(|ui| {
+                                let dist = cur_keyframe[row_index].dist;
+                                ui.label(dist.to_string());
+                            });
+                            row.col(|ui| {
+                                let trans = cur_keyframe[row_index].trans;
+                                ui.label(format!("{:.2}, {:.2}, {:.2}", trans[0], trans[1], trans[2]));
+                            });
+                            row.col(|ui| {
+                                let rot = cur_keyframe[row_index].rot;
+                                ui.label(format!("{}, {}, {}", rot.x, rot.y, rot.z));
                             });
                         });
                     });
