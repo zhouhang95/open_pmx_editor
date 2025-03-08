@@ -139,7 +139,12 @@ impl Motion {
     pub fn write_vmd(&self, path: &str) {
         let mut file = vec![];
         write_string(&mut file, &VERSION_2.to_string(), 30);
-        write_string(&mut file, &self.model_name, 20);
+        if self.bone_keyframes.is_empty() && self.morph_keyframes.is_empty() {
+            let content_u8 = [131,74,131,129,131,137,129,69,143,198,150,190,0,111,110,32,68,97,116,97];
+            file.write_all(&content_u8).unwrap();
+        } else {
+            write_string(&mut file, &self.model_name, 20);
+        }
         {
             let mut bone_kf_count = 0;
             for (_, list) in &self.bone_keyframes {
